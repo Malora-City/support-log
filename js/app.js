@@ -4,7 +4,11 @@ import {
     registerUser, 
     logoutUser, 
     setupDatabaseSync, 
-    pushTbDocUpdate 
+    pushTbDocUpdate,
+    currentUserProfile,
+    approveUser,
+    denyUser,
+    changeUserRole
 } from "./database.js";
 import { 
     initializeUI, 
@@ -25,7 +29,8 @@ import {
     deleteMember, 
     addMember, 
     removeLog, 
-    filterLogs 
+    filterLogs,
+    renderRootApprovalBanner
 } from "./ui.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
@@ -173,6 +178,9 @@ window.exportStatsToCSV = exportStatsToCSV;
 window.saveSettings = saveSettings;
 window.handleTbMarkdownInput = handleTbMarkdownInput;
 window.switchTbTab = switchTbTab;
+window.approveUser = approveUser;
+window.denyUser = denyUser;
+window.changeUserRole = changeUserRole;
 
 // Entry initialization on load
 document.addEventListener("DOMContentLoaded", () => {
@@ -180,22 +188,54 @@ document.addEventListener("DOMContentLoaded", () => {
     onAuthStateChanged(auth, (user) => {
         const userEmail = document.getElementById('user-display-email');
         const loginScreen = document.getElementById('login-screen');
+        const pendingScreen = document.getElementById('pending-screen');
+        const loadingScreen = document.getElementById('loading-screen');
         const mainInterface = document.getElementById('main-interface');
+        const pendingUserEmail = document.getElementById('pending-user-email');
         
         if (user) {
             if (userEmail) userEmail.innerText = user.email;
-            if (loginScreen) loginScreen.style.display = 'none';
-            if (mainInterface) mainInterface.style.display = 'block';
+            
+            // Show body and display loading screen while waiting for database
             document.body.style.display = 'block';
+            if (loadingScreen) loadingScreen.style.display = 'flex';
+            if (loginScreen) loginScreen.style.display = 'none';
+            if (pendingScreen) pendingScreen.style.display = 'none';
+            if (mainInterface) mainInterface.style.display = 'none';
             
             // Connect DB Realtime sync
             setupDatabaseSync(
                 // Data Update callback
                 (isRealtime) => {
-                    renderTeam();
-                    renderAiSuggestions();
-                    renderLogs();
-                    renderSettingsTab();
+                    // Route based on user access approval status
+                    if (currentUserProfile) {
+                        if (currentUserProfile.status === 'approved') {
+                            if (loadingScreen) loadingScreen.style.display = 'none';
+                            if (loginScreen) loginScreen.style.display = 'none';
+                            if (pendingScreen) pendingScreen.style.display = 'none';
+                            if (mainInterface) mainInterface.style.display = 'block';
+                            
+                            // Render approved app segments
+                            renderTeam();
+                            renderAiSuggestions();
+                            renderLogs();
+                            renderSettingsTab();
+                            renderRootApprovalBanner();
+                        } else if (currentUserProfile.status === 'pending') {
+                            if (pendingUserEmail) pendingUserEmail.innerText = currentUserProfile.email;
+                            if (loadingScreen) loadingScreen.style.display = 'none';
+                            if (loginScreen) loginScreen.style.display = 'none';
+                            if (mainInterface) mainInterface.style.display = 'none';
+                            if (pendingScreen) pendingScreen.style.display = 'flex';
+                        }
+                    } else {
+                        // Profile loading fallback (database loaded but user not found in /users)
+                        if (pendingUserEmail) pendingUserEmail.innerText = user.email;
+                        if (loadingScreen) loadingScreen.style.display = 'none';
+                        if (loginScreen) loginScreen.style.display = 'none';
+                        if (mainInterface) mainInterface.style.display = 'none';
+                        if (pendingScreen) pendingScreen.style.display = 'flex';
+                    }
                 },
                 // Connection Change callback
                 (isConnected) => {
@@ -215,6 +255,8 @@ document.addEventListener("DOMContentLoaded", () => {
             );
         } else {
             if (mainInterface) mainInterface.style.display = 'none';
+            if (pendingScreen) pendingScreen.style.display = 'none';
+            if (loadingScreen) loadingScreen.style.display = 'none';
             if (loginScreen) loginScreen.style.display = 'flex';
             document.body.style.display = 'block';
         }

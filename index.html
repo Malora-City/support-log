@@ -29,6 +29,28 @@
     </div>
 </div>
 
+<!-- PENDING / FREIGABE WARTEN SCREEN -->
+<div id="pending-screen" style="display: none;">
+    <div class="login-box">
+        <div class="logo-css">M</div>
+        <h2>Zugriff ausstehend</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.6;">
+            Ihr Account (<strong id="pending-user-email" style="color: #fff;">...</strong>) wurde erfolgreich registriert.  
+            Er muss von dem Root-Administrator freigeschaltet werden, bevor Sie das Dashboard nutzen können.
+        </p>
+        <button class="action-btn cancel-modal-btn" onclick="handleLogout()">🚪 Abmelden / Zurück</button>
+    </div>
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen" style="display: none;">
+    <div class="login-box">
+        <div class="logo-css">M</div>
+        <h2>Lade Zentrale...</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 10px;">Verbindung zur Live-Zentrale wird hergestellt.</p>
+    </div>
+</div>
+
 <!-- INTERFACE -->
 <div class="container" id="main-interface" style="display: none;">
     <div class="header-top-bar">
@@ -38,6 +60,9 @@
         </span>
         <button class="logout-btn" onclick="handleLogout()">🚪 Abmelden</button>
     </div>
+
+    <!-- ROOT APPROVAL BANNER (Visible only to Root Admin if pending users exist) -->
+    <div id="root-approval-banner" style="display: none;"></div>
 
     <!-- MAIN TABS NAVIGATION -->
     <div class="main-nav">

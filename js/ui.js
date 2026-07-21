@@ -7,7 +7,12 @@ import {
     aiWeights, 
     aiThresholds,
     syncMissingStats,
-    logoutUser
+    logoutUser,
+    users,
+    currentUserProfile,
+    approveUser,
+    denyUser,
+    changeUserRole
 } from "./database.js";
 import { 
     calculateMemberScore, 
@@ -412,6 +417,55 @@ export function renderSettingsTab() {
             thresholdsContainer.appendChild(row);
         }
     }
+
+    // Render User Management card if the user is root
+    let userMgmtCard = document.getElementById('settings-user-management-card');
+    if (currentUserProfile && currentUserProfile.role === 'root') {
+        if (!userMgmtCard) {
+            userMgmtCard = document.createElement('div');
+            userMgmtCard.id = 'settings-user-management-card';
+            userMgmtCard.className = 'settings-section-card';
+            userMgmtCard.style.marginTop = '24px';
+            userMgmtCard.style.width = '100%';
+            
+            const sectionsFlex = document.querySelector('.settings-sections-flex');
+            if (sectionsFlex) {
+                sectionsFlex.appendChild(userMgmtCard);
+            }
+        }
+        
+        let usersHtml = "";
+        for (let uid in users) {
+            const u = users[uid];
+            if (u.role === 'root') continue; // Don't allow changing root profile
+            usersHtml += `
+                <div class="settings-row" style="flex-direction: row; justify-content: space-between; align-items: center; gap: 10px;">
+                    <span style="font-size: 0.85rem; font-weight: 600;">${u.email} (${u.status === 'approved' ? 'Aktiv' : 'Wartend'})</span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <select onchange="changeUserRole('${uid}', this.value)" style="width: 120px; padding: 6px 10px; margin-bottom: 0; font-size: 0.8rem; height: auto;">
+                            <option value="editor" ${u.role === 'editor' ? 'selected' : ''}>Editor</option>
+                            <option value="teamleitung" ${u.role === 'teamleitung' ? 'selected' : ''}>Teamleitung</option>
+                        </select>
+                        <button class="deny-btn-sm" style="padding: 6px 12px; font-size: 0.75rem; margin-bottom: 0;" onclick="denyUser('${uid}')">Entfernen</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (!usersHtml) {
+            usersHtml = '<p style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">Keine weiteren Benutzer registriert.</p>';
+        }
+        
+        userMgmtCard.innerHTML = `
+            <h3>3. Benutzer-Verwaltung</h3>
+            <p class="settings-desc">Verwalte registrierte Konten und Berechtigungen der Teamleiter.</p>
+            <div class="settings-grid" style="gap: 10px;">
+                ${usersHtml}
+            </div>
+        `;
+    } else {
+        if (userMgmtCard) userMgmtCard.remove();
+    }
 }
 
 // Save thresholds and weights settings to Database
@@ -460,4 +514,57 @@ export function exportStatsToCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// Render root approval banner at the top of the dashboard page
+export function renderRootApprovalBanner() {
+    const banner = document.getElementById('root-approval-banner');
+    if (!banner) return;
+
+    // Only show if user is root
+    if (!currentUserProfile || currentUserProfile.role !== 'root') {
+        banner.style.display = 'none';
+        return;
+    }
+
+    // Filter pending users
+    const pendingUsers = [];
+    for (let uid in users) {
+        if (users[uid] && users[uid].status === 'pending') {
+            pendingUsers.push({ uid, ...users[uid] });
+        }
+    }
+
+    if (pendingUsers.length === 0) {
+        banner.style.display = 'none';
+        return;
+    }
+
+    banner.style.display = 'block';
+    let html = `
+        <div class="approval-banner-header">
+            <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+            <span>Ausstehende Registrierungen (${pendingUsers.length})</span>
+        </div>
+        <div class="approval-banner-list">
+    `;
+
+    pendingUsers.forEach(u => {
+        html += `
+            <div class="approval-request-row">
+                <span class="approval-request-email">${u.email}</span>
+                <div class="approval-request-actions">
+                    <button class="approve-btn-sm" onclick="approveUser('${u.uid}')">Freischalten</button>
+                    <button class="deny-btn-sm" onclick="denyUser('${u.uid}')">Ablehnen</button>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `</div>`;
+    banner.innerHTML = html;
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
 }

@@ -26,6 +26,8 @@ export let textLogs = [];
 export let tbDoc = "";
 export let aiWeights = { ...defaultWeights };
 export let aiThresholds = { ...defaultThresholds };
+export let users = {};
+export let currentUserProfile = null;
 
 // Offline/Online state indicators
 let onDataUpdateCallback = null;
@@ -68,10 +70,31 @@ export async function loginUser(email, password) {
 }
 
 export async function registerUser(email, password) {
-    return createUserWithEmailAndPassword(auth, email, password);
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = credential.user.uid;
+    
+    // Check if there are any users already registered
+    const isFirstUser = Object.keys(users).length === 0;
+    
+    const profile = {
+        email: email,
+        role: isFirstUser ? "root" : "editor",
+        status: isFirstUser ? "approved" : "pending",
+        registeredAt: Date.now()
+    };
+    
+    // Write profile directly to users
+    await set(ref(db, `maloracity_data/users/${uid}`), encodeFirebaseData(profile));
+    
+    // Update local variables immediately
+    currentUserProfile = profile;
+    users[uid] = profile;
+    
+    return credential;
 }
 
 export async function logoutUser() {
+    currentUserProfile = null;
     return signOut(auth);
 }
 
@@ -151,6 +174,12 @@ export function setupDatabaseSync(onDataUpdate, onConnectionChange) {
             teamData = data.teamData || { ...defaultTeamData };
             stats = data.stats || {};
             textLogs = data.textLogs || [];
+            users = data.users || {};
+            
+            // Sync current logged-in user profile
+            if (auth.currentUser) {
+                currentUserProfile = users[auth.currentUser.uid] || null;
+            }
             
             // Sync custom weights and thresholds if present in database
             if (data.settings) {
@@ -166,6 +195,7 @@ export function setupDatabaseSync(onDataUpdate, onConnectionChange) {
             // First run, populate DB with defaults
             teamData = { ...defaultTeamData };
             syncMissingStats();
+            users = {};
             aiWeights = { ...defaultWeights };
             aiThresholds = { ...defaultThresholds };
             pushDatabaseUpdates();
@@ -199,6 +229,7 @@ export function pushDatabaseUpdates() {
         teamData: teamData,
         stats: stats,
         textLogs: textLogs,
+        users: users,
         settings: {
             weights: aiWeights,
             thresholds: aiThresholds
@@ -214,4 +245,20 @@ export function pushDatabaseUpdates() {
 export function pushTbDocUpdate(text) {
     tbDoc = text;
     set(ref(db, 'maloracity_data/tbDoc'), text);
+}
+
+// Root Admin Action Helpers
+export function approveUser(uid) {
+    if (!currentUserProfile || currentUserProfile.role !== 'root') return;
+    set(ref(db, `maloracity_data/users/${uid}/status`), "approved");
+}
+
+export function denyUser(uid) {
+    if (!currentUserProfile || currentUserProfile.role !== 'root') return;
+    set(ref(db, `maloracity_data/users/${uid}`), null);
+}
+
+export function changeUserRole(uid, newRole) {
+    if (!currentUserProfile || currentUserProfile.role !== 'root') return;
+    set(ref(db, `maloracity_data/users/${uid}/role`), newRole);
 }

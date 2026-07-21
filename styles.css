@@ -84,8 +84,8 @@ body {
     border: 1px solid var(--card-border);
 }
 
-/* LOGIN SCREEN */
-#login-screen {
+/* FULL-PAGE SCREENS */
+#login-screen, #pending-screen, #loading-screen {
     position: fixed;
     top: 0;
     left: 0;
@@ -1286,3 +1286,90 @@ button.action-btn:active {
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     margin: 20px 0;
 }
+
+/* ROOT APPROVAL BANNER STYLING */
+#root-approval-banner {
+    background: rgba(245, 158, 11, 0.07);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: var(--radius-md);
+    padding: 16px 22px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.03);
+    animation: scaleIn 0.3s ease-out;
+}
+
+.approval-banner-header {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--warning);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.approval-banner-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.approval-request-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.approval-request-email {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.approval-request-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.approve-btn-sm {
+    background: var(--success-gradient);
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: var(--transition);
+}
+
+.deny-btn-sm {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: var(--transition);
+}
+
+.approve-btn-sm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px var(--success-glow);
+}
+
+.deny-btn-sm:hover {
+    background: var(--danger);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px var(--danger-glow);
+}
+

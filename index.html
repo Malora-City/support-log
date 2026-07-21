@@ -332,7 +332,7 @@
     ];
 
     let saveTimeout;
-    let localTyping = false;
+    let isUserFocused = false;
 
     function checkLogin() {
         if(document.getElementById('login-username').value === "Maloracity" && document.getElementById('login-password').value === "Maloracity110") {
@@ -355,14 +355,17 @@
         document.getElementById('main-interface').style.display = 'block';
         document.body.style.display = 'block';
         
-        // Beim Start direkt den lokalen Stand laden (damit nie was weg ist)
-        const savedText = localStorage.getItem('malora_tb_notes_permanent');
-        if (savedText !== null) {
-            document.getElementById('live-google-doc').value = savedText;
-        }
-
+        restoreTBText();
         loadLiveNotes(); 
-        setInterval(loadLiveNotes, 2000); 
+        setInterval(loadLiveNotes, 1500); // Schneller 1.5-Sekunden Abgleich
+    }
+
+    function restoreTBText() {
+        const savedText = localStorage.getItem('malora_tb_notes_permanent');
+        const docElement = document.getElementById('live-google-doc');
+        if (savedText !== null && docElement && docElement.value.trim() === '') {
+            docElement.value = savedText;
+        }
     }
 
     window.onload = () => {
@@ -406,6 +409,7 @@
         } else if (pageId === 'pinnwand') { 
             document.querySelectorAll('.nav-tab')[1].classList.add('active-tab'); 
             document.getElementById('page-pinnwand').classList.add('active-page'); 
+            restoreTBText();
         } else { 
             document.querySelectorAll('.nav-tab')[2].classList.add('active-tab'); 
             document.getElementById('page-archiv').classList.add('active-page'); 
@@ -575,10 +579,10 @@
         }
     }
 
-    // ECHTES LIVE SYNC (HAUPTFUNKTION)
+    // VOLLSTÄNDIGES LIVE-SYNC
     async function loadLiveNotes() {
         try {
-            let res = await fetch(BIN_URL + "/latest", { headers: { "X-Master-Key": MASTER_KEY } });
+            let res = await fetch(BIN_URL + "/latest?t=" + Date.now(), { headers: { "X-Master-Key": MASTER_KEY } });
             let data = await res.json(); 
             let record = data.record || {};
             
@@ -586,20 +590,19 @@
             renderLiveNotes();
             
             let docElement = document.getElementById('live-google-doc');
-            // Nur aktualisieren, wenn der Kollege etwas geschrieben hat und man selbst gerade nicht tippt
-            if (record.docText !== undefined && !localTyping) {
-                if (docElement.value !== record.docText) {
-                    docElement.value = record.docText;
-                    localStorage.setItem('malora_tb_notes_permanent', record.docText);
-                }
+            // Wenn das Feld nicht gerade aktiv getippt wird, synchronisieren wir den Text sofort
+            if (docElement && record.docText !== undefined && document.activeElement !== docElement) {
+                docElement.value = record.docText;
+                localStorage.setItem('malora_tb_notes_permanent', record.docText);
             }
         } catch (err) { 
-            console.log("Sync verbindet neu..."); 
+            console.log("Sync..."); 
         }
     }
 
     function renderLiveNotes() {
         let box = document.getElementById('pinnwand-notes-list');
+        if (!box) return;
         if (liveNotes.length === 0) { 
             box.innerHTML = '<p style="text-align:center; color:#a0aec0; padding:10px;">Keine aktiven Aushänge.</p>'; 
             return; 
@@ -631,26 +634,33 @@
     }
 
     function triggerDocCloudSave() {
-        localTyping = true;
-        let currentText = document.getElementById('live-google-doc').value;
+        let docElement = document.getElementById('live-google-doc');
+        if (!docElement) return;
+
+        let currentText = docElement.value;
         
-        // Permanent lokal sichern, damit es beim Neuladen NIEMALS weg ist
+        // Sofort unlöschbar im Browser sichern
         localStorage.setItem('malora_tb_notes_permanent', currentText);
 
-        document.getElementById('doc-sync-status').innerText = "Tippt...";
-        document.getElementById('doc-sync-status').style.color = "#fbbf24";
+        const status = document.getElementById('doc-sync-status');
+        if (status) {
+            status.innerText = "Tippt...";
+            status.style.color = "#fbbf24";
+        }
 
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(async () => {
             await saveCloudData();
-            localTyping = false;
-            document.getElementById('doc-sync-status').innerText = "Dokument synchronisiert ✓";
-            document.getElementById('doc-sync-status').style.color = "#4ade80";
-        }, 800);
+            if (status) {
+                status.innerText = "Dokument synchronisiert ✓";
+                status.style.color = "#4ade80";
+            }
+        }, 500);
     }
 
     async function saveCloudData() {
-        let currentDocText = document.getElementById('live-google-doc').value;
+        let docElement = document.getElementById('live-google-doc');
+        let currentDocText = docElement ? docElement.value : localStorage.getItem('malora_tb_notes_permanent') || "";
         try { 
             await fetch(BIN_URL, { 
                 method: "PUT", 

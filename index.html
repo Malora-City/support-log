@@ -71,10 +71,6 @@
         .archive-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; max-height: 280px; overflow-y: auto; }
         .archive-box h3 { font-size: 0.9rem; margin-bottom: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--border); text-transform: uppercase; color: #fff; }
         
-        .board-note { background: #1f2833; border: 1px solid var(--neon); border-radius: 8px; padding: 15px; margin-bottom: 15px; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .board-note .note-meta { font-size: 0.75rem; color: var(--neon); margin-bottom: 5px; font-weight: bold; }
-        .board-note .note-text { font-size: 0.95rem; color: #fff; white-space: pre-wrap; line-height: 1.4; }
-        
         /* MODAL */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; padding: 10px; }
         .modal-content { background: #1f2833; border: 2px solid var(--neon); border-radius: 12px; padding: 20px; width: 100%; max-width: 440px; box-shadow: 0 4px 25px rgba(0,0,0,0.6); }
@@ -115,7 +111,7 @@
 <!-- INTERFACE -->
 <div class="container" id="main-interface" style="display: none;">
     <div class="header-top-bar">
-        <span style="font-size: 0.85rem; color: #a0aec0;">Eingeloggt als Leitungs-Mitglied</span>
+        <span style="font-size: 0.85rem; color: #a0aec0;">Eingeloggt als Leitungs-Mitglied <span id="cloud-status" style="color:#4ade80; margin-left:8px;">● Live Cloud Aktiv</span></span>
         <button class="logout-btn" onclick="logout()">🚪 Abmelden</button>
     </div>
 
@@ -185,7 +181,7 @@
     </div>
 </div>
 
-<!-- POPUP MODAL -->
+<!-- POPUP MODAL BEARBEITEN -->
 <div id="memberModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -306,6 +302,10 @@
 </div>
 
 <script>
+    // CLOUD DATABASE CONFIG (JSONBin - Universelle Live Schnittstelle)
+    const BIN_URL = "https://api.jsonbin.io/v3/b/669ab3d7acd3cb34a86903f5";
+    const MASTER_KEY = "$2b$10$U4K8pZbeF7H9lDcoV0Z9/.bS3eun2A6U4vWf.qWwNn9b.NGeJHeI.";
+
     const roleOrder = [
         "Projektleitung", "Stv. Projektleitung", "Teamleitung", "Stv. Teamleitung", 
         "Fraktionsverwaltungleitung", "Fraktionsverwaltung", "Head Developer", "Developer", 
@@ -316,6 +316,7 @@
     ];
 
     let currentSelectedMember = "";
+    let isSaving = false;
 
     function checkLogin() {
         if(document.getElementById('login-username').value === "Maloracity" && document.getElementById('login-password').value === "Maloracity110") {
@@ -337,7 +338,9 @@
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('main-interface').style.display = 'block';
         document.body.style.display = 'block';
-        loadSharedData();
+        
+        loadGlobalCloudData();
+        setInterval(loadGlobalCloudData, 2500); // Alle 2.5 Sekunden im Hintergrund synchronisieren!
     }
 
     window.onload = () => {
@@ -347,27 +350,6 @@
             document.body.style.display = 'block';
         }
     };
-
-    function loadSharedData() {
-        let savedTeam = localStorage.getItem('malora_team_structure_shared');
-        if (savedTeam) teamData = JSON.parse(savedTeam);
-
-        let savedStats = localStorage.getItem('malora_member_stats_shared');
-        if (savedStats) stats = JSON.parse(savedStats);
-
-        let savedLogs = localStorage.getItem('malora_management_logs_shared');
-        if (savedLogs) textLogs = JSON.parse(savedLogs);
-
-        initStats();
-        renderTeam();
-        renderLogs();
-    }
-
-    function saveSharedData() {
-        localStorage.setItem('malora_team_structure_shared', JSON.stringify(teamData));
-        localStorage.setItem('malora_member_stats_shared', JSON.stringify(stats));
-        localStorage.setItem('malora_management_logs_shared', JSON.stringify(textLogs));
-    }
 
     let teamData = {
         "Projektleitung": ["@MC | Lyrox™"], "Stv. Projektleitung": ["@MC | DonXVitoo™", "@MC | Tobi👀"], 
@@ -390,8 +372,43 @@
     let stats = {};
     let textLogs = [];
 
+    // GLOBALE LIVE CLOUD SYNCHRONISATION
+    async function loadGlobalCloudData() {
+        if (isSaving) return; // Nicht überschreiben während man gerade selbst speichert
+        try {
+            let res = await fetch(BIN_URL, { headers: { "X-Master-Key": MASTER_KEY } });
+            let data = await res.json();
+            if (data && data.record) {
+                let rec = data.record;
+                if (rec.teamData) teamData = rec.teamData;
+                if (rec.stats) stats = rec.stats;
+                if (rec.textLogs) textLogs = rec.textLogs;
+                
+                initStats();
+                renderTeam();
+                renderLogs();
+                calculateAiUpranks();
+            }
+        } catch (err) {
+            console.log("Cloud-Abfrage läuft...");
+        }
+    }
+
+    async function saveGlobalCloudData() {
+        isSaving = true;
+        try {
+            await fetch(BIN_URL, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY },
+                body: JSON.stringify({ teamData: teamData, stats: stats, textLogs: textLogs })
+            });
+        } catch (err) {
+            console.log("Speicherfehler");
+        }
+        isSaving = false;
+    }
+
     function switchPage(pageId) {
-        loadSharedData();
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active-tab'));
         document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active-page'));
         
@@ -416,7 +433,6 @@
     }
 
     function renderTeam() {
-        loadSharedData();
         let container = document.getElementById('team-roster'); 
         container.innerHTML = "";
         
@@ -452,7 +468,6 @@
     }
 
     function openModal(name) {
-        loadSharedData();
         currentSelectedMember = name; 
         document.getElementById('modalMemberName').innerText = name;
         document.getElementById('count-tickets').value = stats[name].tickets || 0; 
@@ -470,29 +485,29 @@
     function openAddMemberModal() { document.getElementById('addMemberModal').style.display = 'flex'; }
     function closeAddModal() { document.getElementById('addMemberModal').style.display = 'none'; }
 
-    function adjustStat(statType, val) {
+    async function adjustStat(statType, val) {
         if (!currentSelectedMember) return;
         if (!stats[currentSelectedMember][statType]) stats[currentSelectedMember][statType] = 0;
         stats[currentSelectedMember][statType] = Math.max(0, stats[currentSelectedMember][statType] + val);
         document.getElementById(`count-${statType}`).value = stats[currentSelectedMember][statType];
         
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} ${val > 0 ? '+' + val : val}`, statType);
-        saveSharedData();
         renderTeam(); calculateAiUpranks();
+        await saveGlobalCloudData();
     }
 
-    function updateStatFromInput(statType) {
+    async function updateStatFromInput(statType) {
         if (!currentSelectedMember) return;
         let inputVal = parseInt(document.getElementById(`count-${statType}`).value);
         if (isNaN(inputVal) || inputVal < 0) inputVal = 0;
         
         stats[currentSelectedMember][statType] = inputVal;
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} gesetzt auf ${inputVal}`, statType);
-        saveSharedData();
         renderTeam(); calculateAiUpranks();
+        await saveGlobalCloudData();
     }
 
-    function changeMemberRole() {
+    async function changeMemberRole() {
         let newRole = document.getElementById('edit-role').value; 
         let oldRole = stats[currentSelectedMember].role;
         if(oldRole === newRole) return;
@@ -503,30 +518,30 @@
         stats[currentSelectedMember].role = newRole;
         
         addLogItem(`🔼 BEFÖRDERUNG: ${currentSelectedMember} von ${oldRole} zu ${newRole}`, 'uprank');
-        saveSharedData();
         renderTeam(); calculateAiUpranks();
+        await saveGlobalCloudData();
     }
 
-    function saveTextLog() {
+    async function saveTextLog() {
         let txt = document.getElementById('modal-text-log').value; 
         if(!txt.trim()) return;
         addLogItem(`📝 NOTIZ für ${currentSelectedMember}: ${txt}`, 'einreisen');
         document.getElementById('modal-text-log').value = ""; 
-        saveSharedData();
         calculateAiUpranks();
+        await saveGlobalCloudData();
     }
 
-    function deleteMember() {
+    async function deleteMember() {
         if(!confirm(`Möchtest du ${currentSelectedMember} wirklich löschen?`)) return;
         let role = stats[currentSelectedMember].role; 
         teamData[role] = teamData[role].filter(n => n !== currentSelectedMember);
         delete stats[currentSelectedMember]; 
         addLogItem(`❌ TEAM-KICK: ${currentSelectedMember} wurde entfernt.`, 'kick');
-        saveSharedData();
         closeModal(); renderTeam(); calculateAiUpranks();
+        await saveGlobalCloudData();
     }
 
-    function addMember() {
+    async function addMember() {
         let name = document.getElementById('add-name').value.trim(); 
         let role = document.getElementById('add-role').value;
         if(!name) return alert("Bitte Namen eingeben!");
@@ -534,26 +549,24 @@
         teamData[role].push(name);
         stats[name] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: role };
         addLogItem(`📥 NEUES MITGLIED: ${name} als ${role} beigetreten.`, 'uprank');
-        saveSharedData();
         closeAddModal(); document.getElementById('add-name').value = ""; 
         renderTeam(); calculateAiUpranks();
+        await saveGlobalCloudData();
     }
 
     function addLogItem(message, category) {
         let now = new Date().toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
         textLogs.unshift({time: now, msg: message, id: Date.now(), cat: category});
-        saveSharedData();
         renderLogs();
     }
 
-    function removeLog(id) {
+    async function removeLog(id) {
         textLogs = textLogs.filter(l => l.id !== id);
-        saveSharedData();
         renderLogs();
+        await saveGlobalCloudData();
     }
 
     function renderLogs() {
-        loadSharedData();
         let containers = { 
             tickets: document.getElementById('log-tickets'), supports: document.getElementById('log-supports'), 
             feedbacks: document.getElementById('log-feedbacks'), einreisen: document.getElementById('log-einreisen'), 
@@ -598,8 +611,7 @@
     }
 
     document.body.style.display = 'block';
-    loadSharedData();
-    calculateAiUpranks();
+    initStats(); renderTeam(); renderLogs(); calculateAiUpranks();
 </script>
 </body>
 </html>

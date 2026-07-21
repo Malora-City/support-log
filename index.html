@@ -97,6 +97,10 @@
         .log-item { background: #131921; padding: 8px; border-radius: 6px; margin-bottom: 8px; font-size: 0.8rem; border-left: 3px solid var(--neon); display: flex; justify-content: space-between; align-items: center; line-height: 1.3; }
         .log-delete { color: #d9534f; cursor: pointer; font-weight: bold; margin-left: 8px; font-size: 1rem; padding: 0 4px; }
     </style>
+
+    <!-- FIREBASE LIVE REALTIME DATABASE SCRIPTS -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
@@ -160,7 +164,7 @@
         <div class="card" style="border: 1px solid var(--neon);">
             <h2>📝 Gemeinsames Live-Dokument (Großes Feld für TB-Vorbereitung)</h2>
             <p style="font-size: 0.8rem; color: #a0aec0; margin-bottom: 10px;">Der Inhalt synchronisiert sich automatisch in Echtzeit für alle Leitungen!</p>
-            <textarea id="live-google-doc" style="height: 480px; background: var(--bg); color: #fff; font-family: monospace; font-size: 0.95rem; border: 1px solid var(--border); padding: 15px;" placeholder="Hier Besprechungspunkte, Protokolle oder Notizen für die TB eintragen..." oninput="triggerDocCloudSave()"></textarea>
+            <textarea id="live-google-doc" style="height: 480px; background: var(--bg); color: #fff; font-family: monospace; font-size: 0.95rem; border: 1px solid var(--border); padding: 15px;" placeholder="Hier Besprechungspunkte, Protokolle oder Notizen für die TB eintragen..." oninput="sendLiveText()"></textarea>
             <div id="doc-sync-status" style="font-size: 0.75rem; color: #4ade80; text-align: right; margin-top: -5px;">Dokument synchronisiert ✓</div>
         </div>
 
@@ -319,8 +323,12 @@
 </div>
 
 <script>
-    const BIN_URL = "https://api.jsonbin.io/v3/b/669ab3d7acd3cb34a86903f5";
-    const MASTER_KEY = "$2b$10$U4K8pZbeF7H9lDcoV0Z9/.bS3eun2A6U4vWf.qWwNn9b.NGeJHeI.";
+    // FIREBASE INITIALISIERUNG
+    const firebaseConfig = {
+        databaseURL: "https://maloracity-default-rtdb.europe-west1.firebasedatabase.app"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
     const roleOrder = [
         "Projektleitung", "Stv. Projektleitung", "Teamleitung", "Stv. Teamleitung", 
@@ -331,8 +339,9 @@
         "Supporter", "Test Supporter", "Einreisebeamter"
     ];
 
-    let saveTimeout;
-    let isUserFocused = false;
+    let liveNotes = []; 
+    let currentSelectedMember = "";
+    let isTyping = false;
 
     function checkLogin() {
         if(document.getElementById('login-username').value === "Maloracity" && document.getElementById('login-password').value === "Maloracity110") {
@@ -354,17 +363,37 @@
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('main-interface').style.display = 'block';
         document.body.style.display = 'block';
-        
-        restoreTBText();
-        loadLiveNotes(); 
-        setInterval(loadLiveNotes, 1500); // Schneller 1.5-Sekunden Abgleich
+        initFirebaseSync();
     }
 
-    function restoreTBText() {
-        const savedText = localStorage.getItem('malora_tb_notes_permanent');
-        const docElement = document.getElementById('live-google-doc');
-        if (savedText !== null && docElement && docElement.value.trim() === '') {
-            docElement.value = savedText;
+    // ECHTE GOOGLE FIREBASE LIVE SYNCHRONISATION (MILLISEKUNDEN-SCHNELL)
+    function initFirebaseSync() {
+        // Textfeld Live-Empfang
+        db.ref("tb_doc_text").on("value", (snapshot) => {
+            const val = snapshot.val() || "";
+            const docElement = document.getElementById('live-google-doc');
+            
+            // Nur überschreiben, wenn der User NICHT tippt
+            if (docElement && document.activeElement !== docElement) {
+                docElement.value = val;
+            }
+        });
+
+        // Aushänge Live-Empfang
+        db.ref("pinnwand_notes").on("value", (snapshot) => {
+            liveNotes = snapshot.val() || [];
+            renderLiveNotes();
+        });
+    }
+
+    function sendLiveText() {
+        const text = document.getElementById('live-google-doc').value;
+        db.ref("tb_doc_text").set(text);
+        
+        const status = document.getElementById('doc-sync-status');
+        if (status) {
+            status.innerText = "Synchronisiert ✓";
+            status.style.color = "#4ade80";
         }
     }
 
@@ -396,8 +425,6 @@
 
     let stats = JSON.parse(localStorage.getItem('malora_member_stats')) || {};
     let textLogs = JSON.parse(localStorage.getItem('malora_management_logs')) || [];
-    let liveNotes = []; 
-    let currentSelectedMember = "";
 
     function switchPage(pageId) {
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active-tab'));
@@ -409,7 +436,6 @@
         } else if (pageId === 'pinnwand') { 
             document.querySelectorAll('.nav-tab')[1].classList.add('active-tab'); 
             document.getElementById('page-pinnwand').classList.add('active-page'); 
-            restoreTBText();
         } else { 
             document.querySelectorAll('.nav-tab')[2].classList.add('active-tab'); 
             document.getElementById('page-archiv').classList.add('active-page'); 
@@ -579,27 +605,6 @@
         }
     }
 
-    // VOLLSTÄNDIGES LIVE-SYNC
-    async function loadLiveNotes() {
-        try {
-            let res = await fetch(BIN_URL + "/latest?t=" + Date.now(), { headers: { "X-Master-Key": MASTER_KEY } });
-            let data = await res.json(); 
-            let record = data.record || {};
-            
-            liveNotes = record.notes || []; 
-            renderLiveNotes();
-            
-            let docElement = document.getElementById('live-google-doc');
-            // Wenn das Feld nicht gerade aktiv getippt wird, synchronisieren wir den Text sofort
-            if (docElement && record.docText !== undefined && document.activeElement !== docElement) {
-                docElement.value = record.docText;
-                localStorage.setItem('malora_tb_notes_permanent', record.docText);
-            }
-        } catch (err) { 
-            console.log("Sync..."); 
-        }
-    }
-
     function renderLiveNotes() {
         let box = document.getElementById('pinnwand-notes-list');
         if (!box) return;
@@ -614,7 +619,7 @@
         box.innerHTML = html;
     }
 
-    async function addLiveNote() {
+    function addLiveNote() {
         let author = document.getElementById('note-author').value.trim(); 
         let text = document.getElementById('note-content').value.trim();
         if (!author || !text) return alert("Ausfüllen, Bro!");
@@ -622,54 +627,13 @@
         let now = new Date().toLocaleDateString('de-DE') + " " + new Date().toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
         liveNotes.unshift({ time: now, author: author, text: text });
         document.getElementById('note-content').value = ""; 
-        renderLiveNotes(); 
-        await saveCloudData();
+        db.ref("pinnwand_notes").set(liveNotes);
     }
 
-    async function deleteLiveNote(index) {
+    function deleteLiveNote(index) {
         if (!confirm("Notiz löschen?")) return;
         liveNotes.splice(index, 1); 
-        renderLiveNotes(); 
-        await saveCloudData();
-    }
-
-    function triggerDocCloudSave() {
-        let docElement = document.getElementById('live-google-doc');
-        if (!docElement) return;
-
-        let currentText = docElement.value;
-        
-        // Sofort unlöschbar im Browser sichern
-        localStorage.setItem('malora_tb_notes_permanent', currentText);
-
-        const status = document.getElementById('doc-sync-status');
-        if (status) {
-            status.innerText = "Tippt...";
-            status.style.color = "#fbbf24";
-        }
-
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(async () => {
-            await saveCloudData();
-            if (status) {
-                status.innerText = "Dokument synchronisiert ✓";
-                status.style.color = "#4ade80";
-            }
-        }, 500);
-    }
-
-    async function saveCloudData() {
-        let docElement = document.getElementById('live-google-doc');
-        let currentDocText = docElement ? docElement.value : localStorage.getItem('malora_tb_notes_permanent') || "";
-        try { 
-            await fetch(BIN_URL, { 
-                method: "PUT", 
-                headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY }, 
-                body: JSON.stringify({ notes: liveNotes, docText: currentDocText }) 
-            }); 
-        } catch (err) { 
-            console.log("Sync-Fehler"); 
-        }
+        db.ref("pinnwand_notes").set(liveNotes);
     }
 
     function calculateAiUpranks() {

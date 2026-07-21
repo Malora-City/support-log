@@ -12,485 +12,90 @@
             --border: #2f3e46; 
         }
         
-        * { 
-            box-sizing: border-box; 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Segoe UI', sans-serif; 
-        }
-
-        body { 
-            background-color: var(--bg); 
-            color: #c5c6c7; 
-            padding: 15px; 
-            min-height: 100vh; 
-            display: none; 
-        }
-
-        .container { 
-            max-width: 1400px; 
-            margin: 0 auto; 
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg); color: #c5c6c7; padding: 15px; min-height: 100vh; display: none; }
+        .container { max-width: 1400px; margin: 0 auto; }
         
         /* LOGIN SCREEN */
-        #login-screen { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: var(--bg); 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 9999; 
-        }
-
-        .login-box { 
-            background: #1f2833; 
-            padding: 40px 30px; 
-            border-radius: 12px; 
-            border: 2px solid var(--neon); 
-            width: 100%; 
-            max-width: 360px; 
-            text-align: center; 
-            box-shadow: 0 0 25px rgba(69,243,255,0.2); 
-        }
-
-        .login-box h2 { 
-            color: var(--neon); 
-            margin-top: 15px; 
-            margin-bottom: 25px; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            font-size: 1.5rem; 
-        }
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .login-box { background: #1f2833; padding: 40px 30px; border-radius: 12px; border: 2px solid var(--neon); width: 100%; max-width: 360px; text-align: center; box-shadow: 0 0 25px rgba(69,243,255,0.2); }
+        .login-box h2 { color: var(--neon); margin-top: 15px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; font-size: 1.5rem; }
         
-        .logo-css { 
-            width: 90px; 
-            height: 90px; 
-            background: #151a21; 
-            border: 3px solid var(--neon); 
-            border-radius: 16px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 2.8rem; 
-            font-weight: 900; 
-            color: var(--neon); 
-            text-shadow: 0 0 15px var(--neon); 
-            box-shadow: 0 0 20px rgba(69,243,255,0.3); 
-            margin: 0 auto; 
-            animation: pulse 2.5s infinite; 
-        }
-
+        .logo-css { width: 90px; height: 90px; background: #151a21; border: 3px solid var(--neon); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; font-weight: 900; color: var(--neon); text-shadow: 0 0 15px var(--neon); box-shadow: 0 0 20px rgba(69,243,255,0.3); margin: 0 auto; animation: pulse 2.5s infinite; }
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.04); box-shadow: 0 0 25px rgba(69,243,255,0.5); }
             100% { transform: scale(1); }
         }
 
-        /* TOP BAR & LOGOUT */
-        .header-top-bar { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 10px; 
-        }
-
-        .logout-btn { 
-            background: #d9534f; 
-            color: #fff; 
-            border: none; 
-            padding: 8px 15px; 
-            border-radius: 6px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 0.85rem; 
-            transition: 0.2s; 
-        }
-
-        .logout-btn:hover { 
-            background: #c9302c; 
-        }
+        /* TOP BAR */
+        .header-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .logout-btn { background: #d9534f; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; }
 
         /* TABS */
-        .main-nav { 
-            display: flex; 
-            background: #1f2833; 
-            border-radius: 8px 8px 0 0; 
-            border: 1px solid var(--border); 
-            border-bottom: none; 
-            overflow: hidden; 
-            margin-top: 5px; 
-        }
+        .main-nav { display: flex; background: #1f2833; border-radius: 8px 8px 0 0; border: 1px solid var(--border); border-bottom: none; overflow: hidden; margin-top: 5px; }
+        .nav-tab { flex: 1; text-align: center; padding: 15px 10px; cursor: pointer; font-weight: bold; font-size: 0.95rem; color: #a0aec0; transition: 0.2s; background: #151a21; }
+        .nav-tab:hover { color: var(--neon); }
+        .nav-tab.active-tab { color: var(--neon); background: #1f2833; border-bottom: 3px solid var(--neon); }
 
-        .nav-tab { 
-            flex: 1; 
-            text-align: center; 
-            padding: 15px 10px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            font-size: 0.95rem; 
-            color: #a0aec0; 
-            transition: 0.2s; 
-            background: #151a21; 
-        }
-
-        .nav-tab:hover { 
-            color: var(--neon); 
-        }
-
-        .nav-tab.active-tab { 
-            color: var(--neon); 
-            background: #1f2833; 
-            border-bottom: 3px solid var(--neon); 
-        }
-
-        .page-content { 
-            display: none; 
-            background: #1f2833; 
-            border: 1px solid var(--border); 
-            border-radius: 0 0 8px 8px; 
-            padding: 20px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5); 
-        }
-
-        .page-content.active-page { 
-            display: block; 
-        }
+        .page-content { display: none; background: #1f2833; border: 1px solid var(--border); border-radius: 0 0 8px 8px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .page-content.active-page { display: block; }
         
-        header { 
-            padding: 20px 0; 
-            margin-bottom: 20px; 
-            text-align: center; 
-            border-bottom: 1px solid var(--border); 
-        }
-
-        header h1 { 
-            color: var(--neon); 
-            text-transform: uppercase; 
-            font-size: 1.8rem; 
-            letter-spacing: 1px; 
-            margin-top: 10px; 
-        }
+        header { padding: 20px 0; margin-bottom: 20px; text-align: center; border-bottom: 1px solid var(--border); }
+        header h1 { color: var(--neon); text-transform: uppercase; font-size: 1.8rem; letter-spacing: 1px; margin-top: 10px; }
         
-        .main-layout { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 20px; 
-        }
+        .main-layout { display: flex; flex-direction: column; gap: 20px; }
+        @media(min-width: 992px) { .main-layout { flex-direction: row; } .column-left { flex: 3; } .column-right { flex: 1; min-width: 350px; } }
 
-        @media(min-width: 992px) { 
-            .main-layout { flex-direction: row; } 
-            .column-left { flex: 3; } 
-            .column-right { flex: 1; min-width: 350px; } 
-        }
-
-        .card { 
-            background: #131921; 
-            border-radius: 12px; 
-            border: 1px solid var(--border); 
-            padding: 20px; 
-            margin-bottom: 20px; 
-        }
-
-        .card h2 { 
-            color: var(--neon); 
-            text-transform: uppercase; 
-            font-size: 1.2rem; 
-            margin-bottom: 15px; 
-            border-left: 4px solid var(--neon); 
-            padding-left: 10px; 
-        }
+        .card { background: #131921; border-radius: 12px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+        .card h2 { color: var(--neon); text-transform: uppercase; font-size: 1.2rem; margin-bottom: 15px; border-left: 4px solid var(--neon); padding-left: 10px; }
         
         /* TEAM GRID */
-        .role-section { 
-            border-bottom: 1px solid var(--border); 
-            padding: 12px 0; 
-        }
-
-        .role-section:last-child { 
-            border-bottom: none; 
-        }
-
-        .role-title { 
-            font-weight: bold; 
-            color: #66fcf1; 
-            font-size: 0.95rem; 
-            text-transform: uppercase; 
-            margin-bottom: 10px; 
-        }
-
-        .member-grid { 
-            display: flex; 
-            flex-wrap: wrap; 
-            gap: 10px; 
-        }
+        .role-section { border-bottom: 1px solid var(--border); padding: 12px 0; }
+        .role-section:last-child { border-bottom: none; }
+        .role-title { font-weight: bold; color: #66fcf1; font-size: 0.95rem; text-transform: uppercase; margin-bottom: 10px; }
+        .member-grid { display: flex; flex-wrap: wrap; gap: 10px; }
         
-        .member-card { 
-            background: var(--bg); 
-            border: 1px solid var(--neon); 
-            padding: 10px 14px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            transition: 0.2s; 
-            min-width: 140px; 
-            flex-grow: 1; 
-            text-align: center; 
-        }
+        .member-card { background: var(--bg); border: 1px solid var(--neon); padding: 10px 14px; border-radius: 8px; cursor: pointer; transition: 0.2s; min-width: 140px; flex-grow: 1; text-align: center; }
+        .member-card:hover { transform: translateY(-2px); box-shadow: 0 0 10px rgba(69,243,255,0.3); }
+        .member-name { font-weight: bold; font-size: 0.9rem; color: #fff; word-break: break-all; }
+        .member-stats-preview { font-size: 0.72rem; color: #a0aec0; margin-top: 4px; line-height: 1.4; }
 
-        .member-card:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 0 10px rgba(69,243,255,0.3); 
-        }
-
-        .member-name { 
-            font-weight: bold; 
-            font-size: 0.9rem; 
-            color: #fff; 
-            word-break: break-all; 
-        }
-
-        .member-stats-preview { 
-            font-size: 0.72rem; 
-            color: #a0aec0; 
-            margin-top: 4px; 
-            line-height: 1.4; 
-        }
-
-        .ai-item { 
-            background: #101712; 
-            border: 1px solid #2e7d32; 
-            padding: 12px; 
-            border-radius: 8px; 
-            margin-bottom: 12px; 
-        }
-
-        .ai-header { 
-            font-weight: bold; 
-            color: #4ade80; 
-            font-size: 0.9rem; 
-            margin-bottom: 4px; 
-        }
-
-        .ai-reason { 
-            font-size: 0.8rem; 
-            color: #a0aec0; 
-        }
+        .ai-item { background: #101712; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        .ai-header { font-weight: bold; color: #4ade80; font-size: 0.9rem; margin-bottom: 4px; }
+        .ai-reason { font-size: 0.8rem; color: #a0aec0; }
         
         /* LOG BOXEN */
-        .archive-grid { 
-            display: grid; 
-            grid-template-columns: 1fr; 
-            gap: 15px; 
-        }
-
-        @media(min-width: 768px) { 
-            .archive-grid { grid-template-columns: repeat(2, 1fr); } 
-        }
-
-        .archive-box { 
-            background: var(--bg); 
-            border: 1px solid var(--border); 
-            border-radius: 8px; 
-            padding: 15px; 
-            max-height: 280px; 
-            overflow-y: auto; 
-        }
-
-        .archive-box h3 { 
-            font-size: 0.9rem; 
-            margin-bottom: 10px; 
-            padding-bottom: 4px; 
-            border-bottom: 1px solid var(--border); 
-            text-transform: uppercase; 
-            color: #fff; 
-        }
+        .archive-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media(min-width: 768px) { .archive-grid { grid-template-columns: repeat(2, 1fr); } }
+        .archive-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; max-height: 280px; overflow-y: auto; }
+        .archive-box h3 { font-size: 0.9rem; margin-bottom: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--border); text-transform: uppercase; color: #fff; }
         
-        .board-note { 
-            background: #1f2833; 
-            border: 1px solid var(--neon); 
-            border-radius: 8px; 
-            padding: 15px; 
-            margin-bottom: 15px; 
-            position: relative; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
-        }
-
-        .board-note .note-meta { 
-            font-size: 0.75rem; 
-            color: var(--neon); 
-            margin-bottom: 5px; 
-            font-weight: bold; 
-        }
-
-        .board-note .note-text { 
-            font-size: 0.95rem; 
-            color: #fff; 
-            white-space: pre-wrap; 
-            line-height: 1.4; 
-        }
+        .board-note { background: #1f2833; border: 1px solid var(--neon); border-radius: 8px; padding: 15px; margin-bottom: 15px; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .board-note .note-meta { font-size: 0.75rem; color: var(--neon); margin-bottom: 5px; font-weight: bold; }
+        .board-note .note-text { font-size: 0.95rem; color: #fff; white-space: pre-wrap; line-height: 1.4; }
         
         /* MODAL */
-        .modal { 
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.85); 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 1000; 
-            padding: 10px; 
-        }
-
-        .modal-content { 
-            background: #1f2833; 
-            border: 2px solid var(--neon); 
-            border-radius: 12px; 
-            padding: 20px; 
-            width: 100%; 
-            max-width: 440px; 
-            box-shadow: 0 4px 25px rgba(0,0,0,0.6); 
-        }
-
-        .modal-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 15px; 
-            border-bottom: 1px solid var(--border); 
-            padding-bottom: 8px; 
-        }
-
-        .modal-header h3 { 
-            color: #66fcf1; 
-            font-size: 1.2rem; 
-            word-break: break-all; 
-        }
-
-        .close-btn { 
-            color: #fff; 
-            cursor: pointer; 
-            font-size: 1.5rem; 
-            font-weight: bold; 
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; padding: 10px; }
+        .modal-content { background: #1f2833; border: 2px solid var(--neon); border-radius: 12px; padding: 20px; width: 100%; max-width: 440px; box-shadow: 0 4px 25px rgba(0,0,0,0.6); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .modal-header h3 { color: #66fcf1; font-size: 1.2rem; word-break: break-all; }
+        .close-btn { color: #fff; cursor: pointer; font-size: 1.5rem; font-weight: bold; }
         
-        .counter-group { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 10px; 
-            background: var(--bg); 
-            padding: 8px 12px; 
-            border-radius: 6px; 
-        }
-
-        .counter-group span { 
-            font-size: 0.9rem; 
-            font-weight: bold; 
-        }
-
-        .counter-controls { 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-        }
-
-        .counter-btn { 
-            width: 30px; 
-            height: 30px; 
-            border-radius: 50%; 
-            border: none; 
-            background: var(--neon); 
-            color: var(--bg); 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 1.1rem; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-        }
+        .counter-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: var(--bg); padding: 8px 12px; border-radius: 6px; }
+        .counter-group span { font-size: 0.9rem; font-weight: bold; }
+        .counter-controls { display: flex; align-items: center; gap: 8px; }
+        .counter-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: var(--neon); color: var(--bg); font-weight: bold; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
         
-        input.counter-input { 
-            width: 55px; 
-            padding: 4px; 
-            background: #1f2833; 
-            border: 1px solid var(--neon); 
-            border-radius: 4px; 
-            color: #fff; 
-            font-size: 0.95rem; 
-            font-weight: bold; 
-            text-align: center; 
-            margin-bottom: 0; 
-        }
+        input.counter-input { width: 55px; padding: 4px; background: #1f2833; border: 1px solid var(--neon); border-radius: 4px; color: #fff; font-size: 0.95rem; font-weight: bold; text-align: center; margin-bottom: 0; }
 
-        input.counter-input::-webkit-inner-spin-button, 
-        input.counter-input::-webkit-outer-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
-        }
-
-        input, select, textarea { 
-            width: 100%; 
-            padding: 10px; 
-            background: var(--bg); 
-            border: 1px solid var(--border); 
-            border-radius: 6px; 
-            color: #fff; 
-            margin-bottom: 12px; 
-            font-size: 0.9rem; 
-        }
-
-        input:focus, select:focus, textarea:focus { 
-            outline: none; 
-            border-color: var(--neon); 
-        }
-
-        button.action-btn { 
-            background: var(--neon); 
-            color: var(--bg); 
-            border: none; 
-            padding: 10px; 
-            font-weight: bold; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            text-transform: uppercase; 
-            width: 100%; 
-            margin-bottom: 8px; 
-            font-size: 0.9rem; 
-        }
-
-        button.delete-btn { 
-            background: #d9534f; 
-            color: #fff; 
-            margin-top: 5px; 
-        }
+        input, select, textarea { width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: #fff; margin-bottom: 12px; font-size: 0.9rem; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--neon); }
+        button.action-btn { background: var(--neon); color: var(--bg); border: none; padding: 10px; font-weight: bold; border-radius: 6px; cursor: pointer; text-transform: uppercase; width: 100%; margin-bottom: 8px; font-size: 0.9rem; }
+        button.delete-btn { background: #d9534f; color: #fff; margin-top: 5px; }
         
-        .log-item { 
-            background: #131921; 
-            padding: 8px; 
-            border-radius: 6px; 
-            margin-bottom: 8px; 
-            font-size: 0.8rem; 
-            border-left: 3px solid var(--neon); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            line-height: 1.3; 
-        }
-
-        .log-delete { 
-            color: #d9534f; 
-            cursor: pointer; 
-            font-weight: bold; 
-            margin-left: 8px; 
-            font-size: 1rem; 
-            padding: 0 4px; 
-        }
+        .log-item { background: #131921; padding: 8px; border-radius: 6px; margin-bottom: 8px; font-size: 0.8rem; border-left: 3px solid var(--neon); display: flex; justify-content: space-between; align-items: center; line-height: 1.3; }
+        .log-delete { color: #d9534f; cursor: pointer; font-weight: bold; margin-left: 8px; font-size: 1rem; padding: 0 4px; }
     </style>
 </head>
 <body>
@@ -545,7 +150,7 @@
         </div>
     </div>
 
-    <!-- SEITE 2: LIVE-DOKUMENTE & PINNWAND -->
+    <!-- SEITE 2: LIVE-DOKUMENTE -->
     <div id="page-pinnwand" class="page-content">
         <header>
             <div class="logo-css" style="width:70px; height:70px; font-size:2.2rem; border-radius:12px;">M</div>
@@ -593,7 +198,7 @@
     </div>
 </div>
 
-<!-- POPUP MODAL BEARBEITEN -->
+<!-- POPUP MODAL -->
 <div id="memberModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -713,46 +318,26 @@
     </div>
 </div>
 
-<!-- SYSTEM-LOGIK -->
 <script>
-    // BIN & KEY
     const BIN_URL = "https://api.jsonbin.io/v3/b/669ab3d7acd3cb34a86903f5";
     const MASTER_KEY = "$2b$10$U4K8pZbeF7H9lDcoV0Z9/.bS3eun2A6U4vWf.qWwNn9b.NGeJHeI.";
 
-    // Perfekt geordnete Rollenliste
     const roleOrder = [
-        "Projektleitung", 
-        "Stv. Projektleitung", 
-        "Teamleitung", 
-        "Stv. Teamleitung", 
-        "Fraktionsverwaltungleitung", 
-        "Fraktionsverwaltung", 
-        "Head Developer", 
-        "Developer", 
-        "Jr. Developer", 
-        "Head Analyst", 
-        "Analyst", 
-        "Probe Analyst", 
-        "Head Administrator", 
-        "Sr. Administrator", 
-        "Administrator", 
-        "Test-Administrator", 
-        "Head Moderator", 
-        "Sr. Moderator", 
-        "Moderator", 
-        "Test - Moderator", 
-        "Head Supporter", 
-        "Sr. Supporter", 
-        "Supporter", 
-        "Test Supporter", 
-        "Einreisebeamter"
+        "Projektleitung", "Stv. Projektleitung", "Teamleitung", "Stv. Teamleitung", 
+        "Fraktionsverwaltungleitung", "Fraktionsverwaltung", "Head Developer", "Developer", 
+        "Jr. Developer", "Head Analyst", "Analyst", "Probe Analyst", "Head Administrator", 
+        "Sr. Administrator", "Administrator", "Test-Administrator", "Head Moderator", 
+        "Sr. Moderator", "Moderator", "Test - Moderator", "Head Supporter", "Sr. Supporter", 
+        "Supporter", "Test Supporter", "Einreisebeamter"
     ];
 
     let saveTimeout;
+    let isEditingDoc = false; // Verhindert Überschreiben beim Tippen
 
+    // MEHRERE BENUTZER GLEICHZEITIG ER LAUBEN
     function checkLogin() {
         if(document.getElementById('login-username').value === "Maloracity" && document.getElementById('login-password').value === "Maloracity110") {
-            localStorage.setItem('malora_logged_in', 'true');
+            sessionStorage.setItem('malora_session_active', 'true'); // Nutzt Session storage statt LocalStorage
             showMainUI();
         } else { 
             document.getElementById('login-error').style.display = 'block'; 
@@ -760,12 +345,10 @@
     }
 
     function logout() {
+        sessionStorage.removeItem('malora_session_active');
         localStorage.removeItem('malora_logged_in');
         document.getElementById('main-interface').style.display = 'none';
         document.getElementById('login-screen').style.display = 'flex';
-        document.getElementById('login-username').value = '';
-        document.getElementById('login-password').value = '';
-        document.getElementById('login-error').style.display = 'none';
     }
 
     function showMainUI() {
@@ -773,24 +356,12 @@
         document.getElementById('main-interface').style.display = 'block';
         document.body.style.display = 'block';
         
-        // Erst lokalen Stand laden
-        const localDocText = localStorage.getItem('malora_tb_notes_backup');
-        if (localDocText !== null) {
-            document.getElementById('live-google-doc').value = localDocText;
-        }
-
-        const localNotes = localStorage.getItem('malora_pinnwand_notes');
-        if (localNotes) {
-            liveNotes = JSON.parse(localNotes);
-            renderLiveNotes();
-        }
-
         loadLiveNotes(); 
-        setInterval(loadLiveNotes, 3000); // Fast 3-Sekunden Sync
+        setInterval(loadLiveNotes, 2000); // 2-Sekunden Takt für echte Live-Sync
     }
 
     window.onload = () => {
-        if(localStorage.getItem('malora_logged_in') === 'true') {
+        if(sessionStorage.getItem('malora_session_active') === 'true' || localStorage.getItem('malora_logged_in') === 'true') {
             showMainUI(); 
         } else {
             document.body.style.display = 'block';
@@ -798,27 +369,17 @@
     };
 
     let teamData = JSON.parse(localStorage.getItem('malora_team_structure')) || {
-        "Projektleitung": ["@MC | Lyrox™"], 
-        "Stv. Projektleitung": ["@MC | DonXVitoo™", "@MC | Tobi👀"], 
-        "Teamleitung": ["@MC | Paul", "@MC | ZmtxTV 👀"], 
-        "Stv. Teamleitung": ["@MC | CityNeko 👀"], 
-        "Fraktionsverwaltungleitung": ["@MC | Jaden", "@MC | John"], 
-        "Fraktionsverwaltung": [], 
-        "Head Developer": ["@MC | Knoppers.exe"], 
-        "Developer": [], 
-        "Jr. Developer": ["@OnlyError"], 
+        "Projektleitung": ["@MC | Lyrox™"], "Stv. Projektleitung": ["@MC | DonXVitoo™", "@MC | Tobi👀"], 
+        "Teamleitung": ["@MC | Paul", "@MC | ZmtxTV 👀"], "Stv. Teamleitung": ["@MC | CityNeko 👀"], 
+        "Fraktionsverwaltungleitung": ["@MC | Jaden", "@MC | John"], "Fraktionsverwaltung": [], 
+        "Head Developer": ["@MC | Knoppers.exe"], "Developer": [], "Jr. Developer": ["@OnlyError"], 
         "Head Analyst": ["@MC | Hassan", "<@727523575950606396>", "@MC | Ling.js", "@MC | Turbo.dll"], 
         "Analyst": ["<@562260580988092475>", "<@772069989582110732>", "@MC | Lias", "@MC | Ling.js", "<@148278991352164494>"], 
-        "Probe Analyst": [], 
-        "Head Administrator": ["@MC | Pauli™"], 
-        "Sr. Administrator": ["@MC | Patrick 👀"], 
-        "Administrator": ["@MC | HIRA", "@MC | Lenny"], 
-        "Test-Administrator": ["@MC I Eliasdwd"], 
-        "Head Moderator": ["@MC | Matti"], 
-        "Sr. Moderator": [],
+        "Probe Analyst": [], "Head Administrator": ["@MC | Pauli™"], "Sr. Administrator": ["@MC | Patrick 👀"], 
+        "Administrator": ["@MC | HIRA", "@MC | Lenny"], "Test-Administrator": ["@MC I Eliasdwd"], 
+        "Head Moderator": ["@MC | Matti"], "Sr. Moderator": [], 
         "Moderator": ["@MC | ★ R Y Z E ★", "@MC | Exy.lua", "@MC | Knobi", "@MC | Līåm™", "@MC | Sidney"], 
-        "Test - Moderator": ["@MC | zonex", "@MC | Andre ✝"], 
-        "Head Supporter": [], 
+        "Test - Moderator": ["@MC | zonex", "@MC | Andre ✝"], "Head Supporter": [], 
         "Sr. Supporter": ["@MC | Kellox"], 
         "Supporter": ["@MC | Aspy", "@MC | IDropMyTable", "@MC | Jamal", "@MC | Klaisnax", "@MC | MD-01 Tim Dlnaro", "@MC | MD-02 368kk", "<@381082149803261954>", "@MC | Tristan Tiefprais", "@MC | Vito Nacé", "@MC I Jonas👀", "@MC I Louis", "@MC I Nick.exe"], 
         "Test Supporter": ["<@1456434493236711499>", "@MC | Dave Shanke", "<@704072513617133638>", "<@1066692526158905346>", "<@1266035889209872489>", "@MC | Luca Abi", "@MC | Nick", "@MC | syzulex", "@MC l Jay"], 
@@ -828,7 +389,6 @@
     let stats = JSON.parse(localStorage.getItem('malora_member_stats')) || {};
     let textLogs = JSON.parse(localStorage.getItem('malora_management_logs')) || [];
     let liveNotes = []; 
-    let currentDocText = ""; 
     let currentSelectedMember = "";
 
     function switchPage(pageId) {
@@ -907,17 +467,9 @@
         document.getElementById('memberModal').style.display = 'flex';
     }
 
-    function closeModal() { 
-        document.getElementById('memberModal').style.display = 'none'; 
-    }
-
-    function openAddMemberModal() { 
-        document.getElementById('addMemberModal').style.display = 'flex'; 
-    }
-
-    function closeAddModal() { 
-        document.getElementById('addMemberModal').style.display = 'none'; 
-    }
+    function closeModal() { document.getElementById('memberModal').style.display = 'none'; }
+    function openAddMemberModal() { document.getElementById('addMemberModal').style.display = 'flex'; }
+    function closeAddModal() { document.getElementById('addMemberModal').style.display = 'none'; }
 
     function adjustStat(statType, val) {
         if (!currentSelectedMember) return;
@@ -926,8 +478,7 @@
         document.getElementById(`count-${statType}`).value = stats[currentSelectedMember][statType];
         
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} ${val > 0 ? '+' + val : val}`, statType);
-        renderTeam(); 
-        calculateAiUpranks();
+        renderTeam(); calculateAiUpranks();
     }
 
     function updateStatFromInput(statType) {
@@ -937,8 +488,7 @@
         
         stats[currentSelectedMember][statType] = inputVal;
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} gesetzt auf ${inputVal}`, statType);
-        renderTeam(); 
-        calculateAiUpranks();
+        renderTeam(); calculateAiUpranks();
     }
 
     function changeMemberRole() {
@@ -952,8 +502,7 @@
         stats[currentSelectedMember].role = newRole;
         
         addLogItem(`🔼 BEFÖRDERUNG: ${currentSelectedMember} von ${oldRole} zu ${newRole}`, 'uprank');
-        renderTeam(); 
-        calculateAiUpranks();
+        renderTeam(); calculateAiUpranks();
     }
 
     function saveTextLog() {
@@ -970,9 +519,7 @@
         teamData[role] = teamData[role].filter(n => n !== currentSelectedMember);
         delete stats[currentSelectedMember]; 
         addLogItem(`❌ TEAM-KICK: ${currentSelectedMember} wurde entfernt.`, 'kick');
-        closeModal(); 
-        renderTeam(); 
-        calculateAiUpranks();
+        closeModal(); renderTeam(); calculateAiUpranks();
     }
 
     function addMember() {
@@ -983,10 +530,8 @@
         teamData[role].push(name);
         stats[name] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: role };
         addLogItem(`📥 NEUES MITGLIED: ${name} als ${role} beigetreten.`, 'uprank');
-        closeAddModal(); 
-        document.getElementById('add-name').value = ""; 
-        renderTeam(); 
-        calculateAiUpranks();
+        closeAddModal(); document.getElementById('add-name').value = ""; 
+        renderTeam(); calculateAiUpranks();
     }
 
     function addLogItem(message, category) {
@@ -1004,14 +549,10 @@
 
     function renderLogs() {
         let containers = { 
-            tickets: document.getElementById('log-tickets'), 
-            supports: document.getElementById('log-supports'), 
-            feedbacks: document.getElementById('log-feedbacks'), 
-            einreisen: document.getElementById('log-einreisen'), 
-            ausreisen: document.getElementById('log-ausreisen'), 
-            banne: document.getElementById('log-banne'), 
-            uprank: document.getElementById('log-upranks'), 
-            kick: document.getElementById('log-kicks') 
+            tickets: document.getElementById('log-tickets'), supports: document.getElementById('log-supports'), 
+            feedbacks: document.getElementById('log-feedbacks'), einreisen: document.getElementById('log-einreisen'), 
+            ausreisen: document.getElementById('log-ausreisen'), banne: document.getElementById('log-banne'), 
+            uprank: document.getElementById('log-upranks'), kick: document.getElementById('log-kicks') 
         };
         for(let key in containers) { if(containers[key]) containers[key].innerHTML = ""; }
         let counts = { tickets:0, supports:0, feedbacks:0, einreisen:0, ausreisen:0, banne:0, uprank:0, kick:0 };
@@ -1029,21 +570,21 @@
         }
     }
 
+    // REALTIME CLOUD FETCH
     async function loadLiveNotes() {
+        if (isEditingDoc) return; // Wenn du gerade tippst, überschreiben wir deine Eingabe nicht!
+
         try {
-            let res = await fetch(BIN_URL, { headers: { "X-Master-Key": MASTER_KEY } });
+            let res = await fetch(BIN_URL + "/latest", { headers: { "X-Master-Key": MASTER_KEY } });
             let data = await res.json(); 
-            liveNotes = data.record.notes || []; 
-            currentDocText = data.record.docText || "";
+            let record = data.record;
             
+            liveNotes = record.notes || []; 
             renderLiveNotes();
-            localStorage.setItem('malora_pinnwand_notes', JSON.stringify(liveNotes));
             
-            if (document.activeElement !== document.getElementById('live-google-doc')) { 
-                if (currentDocText) {
-                    document.getElementById('live-google-doc').value = currentDocText; 
-                    localStorage.setItem('malora_tb_notes_backup', currentDocText);
-                }
+            let docElement = document.getElementById('live-google-doc');
+            if (record.docText !== undefined && document.activeElement !== docElement) {
+                docElement.value = record.docText;
             }
         } catch (err) { 
             console.log("Sync wartet..."); 
@@ -1072,7 +613,6 @@
         liveNotes.unshift({ time: now, author: author, text: text });
         document.getElementById('note-content').value = ""; 
         renderLiveNotes(); 
-        localStorage.setItem('malora_pinnwand_notes', JSON.stringify(liveNotes));
         await saveCloudData();
     }
 
@@ -1080,26 +620,25 @@
         if (!confirm("Notiz löschen?")) return;
         liveNotes.splice(index, 1); 
         renderLiveNotes(); 
-        localStorage.setItem('malora_pinnwand_notes', JSON.stringify(liveNotes));
         await saveCloudData();
     }
 
     function triggerDocCloudSave() {
-        document.getElementById('doc-sync-status').innerText = "Tippt... (Warte auf Sync)";
+        isEditingDoc = true;
+        document.getElementById('doc-sync-status').innerText = "Speichert live...";
         document.getElementById('doc-sync-status').style.color = "#fbbf24";
-        
-        localStorage.setItem('malora_tb_notes_backup', document.getElementById('live-google-doc').value);
 
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(async () => {
-            currentDocText = document.getElementById('live-google-doc').value;
             await saveCloudData();
+            isEditingDoc = false;
             document.getElementById('doc-sync-status').innerText = "Dokument synchronisiert ✓";
             document.getElementById('doc-sync-status').style.color = "#4ade80";
         }, 1000);
     }
 
     async function saveCloudData() {
+        let currentDocText = document.getElementById('live-google-doc').value;
         try { 
             await fetch(BIN_URL, { 
                 method: "PUT", 
@@ -1133,10 +672,7 @@
     }
 
     document.body.style.display = 'block';
-    initStats(); 
-    renderTeam(); 
-    renderLogs(); 
-    calculateAiUpranks();
+    initStats(); renderTeam(); renderLogs(); calculateAiUpranks();
 </script>
 </body>
 </html>

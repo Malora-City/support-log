@@ -18,7 +18,7 @@
         
         /* LOGIN SCREEN */
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-        .login-box { background: #1f2833; padding: 40px 30px; border-radius: 12px; border: 2px solid var(--neon); width: 100%; max-width: 360px; text-align: center; box-shadow: 0 0 25px rgba(69,243,255,0.2); }
+        .login-box { background: #1f2833; padding: 40px 30px; border-radius: 12px; border: 2px solid var(--neon); width: 100%; max-width: 380px; text-align: center; box-shadow: 0 0 25px rgba(69,243,255,0.2); }
         .login-box h2 { color: var(--neon); margin-top: 15px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; font-size: 1.5rem; }
         
         .logo-css { width: 90px; height: 90px; background: #151a21; border: 3px solid var(--neon); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; font-weight: 900; color: var(--neon); text-shadow: 0 0 15px var(--neon); box-shadow: 0 0 20px rgba(69,243,255,0.3); margin: 0 auto; animation: pulse 2.5s infinite; }
@@ -96,23 +96,26 @@
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
+<!-- LOGIN / REGISTRIERUNG SCREEN -->
 <div id="login-screen">
     <div class="login-box">
         <div class="logo-css">M</div>
         <h2>Leitungs Login</h2>
-        <input type="text" id="login-username" placeholder="Benutzername">
+        <input type="email" id="login-email" placeholder="E-Mail Adresse">
         <input type="password" id="login-password" placeholder="Passwort">
-        <button class="action-btn" onclick="checkLogin()">Einloggen</button>
-        <div id="login-error" style="color: #d9534f; margin-top: 10px; display: none; font-weight: bold; font-size: 0.85rem;">Falsche Daten, Bro!</div>
+        <div style="display: flex; gap: 8px;">
+            <button class="action-btn" onclick="handleLogin()">Einloggen</button>
+            <button class="action-btn" style="background: #38bdf8; color: #0b0c10;" onclick="handleRegister()">Registrieren</button>
+        </div>
+        <div id="login-error" style="color: #d9534f; margin-top: 10px; display: none; font-weight: bold; font-size: 0.85rem; word-break: break-word;"></div>
     </div>
 </div>
 
 <!-- INTERFACE -->
 <div class="container" id="main-interface" style="display: none;">
     <div class="header-top-bar">
-        <span style="font-size: 0.85rem; color: #a0aec0;">Eingeloggt als Leitungs-Mitglied <span id="sync-indicator" style="color:#4ade80; margin-left:8px;">● Live Verbunden</span></span>
-        <button class="logout-btn" onclick="logout()">🚪 Abmelden</button>
+        <span style="font-size: 0.85rem; color: #a0aec0;">Eingeloggt als: <strong id="user-display-email" style="color: #fff;">...</strong> <span id="sync-indicator" style="color:#4ade80; margin-left:8px;">● Firebase Realtime Verbunden</span></span>
+        <button class="logout-btn" onclick="handleLogout()">🚪 Abmelden</button>
     </div>
 
     <div class="main-nav">
@@ -301,10 +304,38 @@
     </div>
 </div>
 
-<script>
-    // BIN & MASTER KEY FÜR LIVE SYNC
-    const BIN_URL = "https://api.jsonbin.io/v3/b/669ab3d7acd3cb34a86903f5";
-    const MASTER_KEY = "$2b$10$U4K8pZbeF7H9lDcoV0Z9/.bS3eun2A6U4vWf.qWwNn9b.NGeJHeI.";
+<!-- FIREBASE SDK MODUL INTEGRATION -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { 
+        getAuth, 
+        signInWithEmailAndPassword, 
+        createUserWithEmailAndPassword, 
+        signOut, 
+        onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { 
+        getDatabase, 
+        ref, 
+        set, 
+        onValue 
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    // DEINE FIREBASE KONFIGURATION
+    const firebaseConfig = {
+        apiKey: "AIzaSyAD4y-9XFJeQV1PX1WRARszXXM2LjClG3c",
+        authDomain: "maloracity.firebaseapp.com",
+        databaseURL: "https://maloracity-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "maloracity",
+        storageBucket: "maloracity.firebasestorage.app",
+        messagingSenderId: "1023780794036",
+        appId: "1:1023780794036:web:08df9ae7ade87df53cb1e1"
+    };
+
+    // FIREBASE INITIALISIEREN
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
 
     const roleOrder = [
         "Projektleitung", "Stv. Projektleitung", "Teamleitung", "Stv. Teamleitung", 
@@ -316,7 +347,6 @@
     ];
 
     let currentSelectedMember = "";
-    let isSaving = false;
 
     let defaultTeamData = {
         "Projektleitung": ["@MC | Lyrox™"], "Stv. Projektleitung": ["@MC | DonXVitoo™", "@MC | Tobi👀"], 
@@ -336,97 +366,118 @@
         "Einreisebeamter": ["@MC | ★ R Y Z E ★", "@MC | Aspy", "@MC | HIRA", "@MC | IDropMyTable", "@MC | Jamal", "@MC | Kellox", "@MC | MD-02 368kk", "@MC | syzulex", "@MC | Nick.exe"]
     };
 
-    // PURE LOKALE UND CLOUD VARIABLEN LADE-STRATEGIE (VERHINDERT LÖSCHEN BEIM REFRESH)
-    let teamData = JSON.parse(localStorage.getItem('malora_team_perm')) || defaultTeamData;
-    let stats = JSON.parse(localStorage.getItem('malora_stats_perm')) || {};
-    let textLogs = JSON.parse(localStorage.getItem('malora_logs_perm')) || [];
+    let teamData = defaultTeamData;
+    let stats = {};
+    let textLogs = [];
 
-    function checkLogin() {
-        if(document.getElementById('login-username').value === "Maloracity" && document.getElementById('login-password').value === "Maloracity110") {
-            sessionStorage.setItem('malora_session_active', 'true');
-            showMainUI();
-        } else { 
-            document.getElementById('login-error').style.display = 'block'; 
+    // --- FIREBASE AUTHENTIFICATION ---
+
+    async function handleLogin() {
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+        const errDiv = document.getElementById('login-error');
+        errDiv.style.display = 'none';
+
+        if(!email || !password) {
+            errDiv.innerText = "Bitte E-Mail und Passwort eingeben, Bro!";
+            errDiv.style.display = 'block';
+            return;
+        }
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            errDiv.innerText = "Fehler beim Login: " + formatAuthError(error.code);
+            errDiv.style.display = 'block';
         }
     }
 
-    function logout() {
-        sessionStorage.removeItem('malora_session_active');
-        localStorage.removeItem('malora_logged_in');
-        document.getElementById('main-interface').style.display = 'none';
-        document.getElementById('login-screen').style.display = 'flex';
+    async function handleRegister() {
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+        const errDiv = document.getElementById('login-error');
+        errDiv.style.display = 'none';
+
+        if(!email || !password) {
+            errDiv.innerText = "Bitte E-Mail und Passwort eingeben, Bro!";
+            errDiv.style.display = 'block';
+            return;
+        }
+
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            errDiv.innerText = "Fehler bei Registrierung: " + formatAuthError(error.code);
+            errDiv.style.display = 'block';
+        }
     }
 
-    function showMainUI() {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('main-interface').style.display = 'block';
-        document.body.style.display = 'block';
-        
-        initStats();
-        renderTeam();
-        renderLogs();
-        calculateAiUpranks();
-
-        // Starte Live Cloud Abgleich
-        syncFromCloud();
-        setInterval(syncFromCloud, 3000);
+    async function handleLogout() {
+        await signOut(auth);
     }
 
-    window.onload = () => {
-        if(sessionStorage.getItem('malora_session_active') === 'true' || localStorage.getItem('malora_logged_in') === 'true') {
-            showMainUI(); 
+    function formatAuthError(code) {
+        switch(code) {
+            case 'auth/invalid-email': return 'Ungültiges E-Mail Format.';
+            case 'auth/user-not-found': return 'Kein Account mit dieser E-Mail gefunden.';
+            case 'auth/wrong-password': return 'Falsches Passwort.';
+            case 'auth/email-already-in-use': return 'E-Mail wird bereits verwendet.';
+            case 'auth/weak-password': return 'Das Passwort muss mind. 6 Zeichen haben.';
+            case 'auth/invalid-credential': return 'Ungültige Anmeldedaten.';
+            default: return code;
+        }
+    }
+
+    // AUTOMATISCHER LOGIN-STATUS BEOBACHTER
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            document.getElementById('user-display-email').innerText = user.email;
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-interface').style.display = 'block';
+            document.body.style.display = 'block';
+            
+            // Starte Realtime DB Listener sobald eingeloggt
+            connectFirebaseRealtime();
         } else {
+            document.getElementById('main-interface').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex';
             document.body.style.display = 'block';
         }
-    };
+    });
 
-    function saveLocally() {
-        localStorage.setItem('malora_team_perm', JSON.stringify(teamData));
-        localStorage.setItem('malora_stats_perm', JSON.stringify(stats));
-        localStorage.setItem('malora_logs_perm', JSON.stringify(textLogs));
-    }
+    // --- FIREBASE REALTIME DATABASE SYNC ---
 
-    async function syncFromCloud() {
-        if (isSaving) return;
-        try {
-            let res = await fetch(BIN_URL + "/latest", { 
-                headers: { "X-Master-Key": MASTER_KEY, "cache-control": "no-cache" } 
-            });
-            if (res.ok) {
-                let data = await res.json();
-                let rec = data.record || {};
-                
-                if (rec.stats && Object.keys(rec.stats).length > 0) {
-                    // Verhindere leeres Überschreiben
-                    teamData = rec.teamData || teamData;
-                    stats = rec.stats || stats;
-                    textLogs = rec.textLogs || textLogs;
-                    
-                    saveLocally();
-                    renderTeam();
-                    renderLogs();
-                    calculateAiUpranks();
-                }
+    function connectFirebaseRealtime() {
+        const dbRef = ref(db, 'maloracity_data');
+        
+        // Empfange alle Änderungen sofort in Echtzeit
+        onValue(dbRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                teamData = data.teamData || defaultTeamData;
+                stats = data.stats || {};
+                textLogs = data.textLogs || [];
+            } else {
+                // Wenn DB noch leer ist, mit Standard-Daten füllen
+                teamData = defaultTeamData;
+                initStats();
+                pushToFirebase();
             }
-        } catch (e) {
-            console.log("Sync wartet...");
-        }
+            renderTeam();
+            renderLogs();
+            calculateAiUpranks();
+        });
     }
 
-    async function pushToCloud() {
-        saveLocally();
-        isSaving = true;
-        try {
-            await fetch(BIN_URL, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY },
-                body: JSON.stringify({ teamData: teamData, stats: stats, textLogs: textLogs })
-            });
-        } catch (e) {
-            console.log("Cloud Push Fehler");
-        }
-        isSaving = false;
+    function pushToFirebase() {
+        set(ref(db, 'maloracity_data'), {
+            teamData: teamData,
+            stats: stats,
+            textLogs: textLogs
+        });
     }
+
+    // --- APPLIKATIONS LOGIK ---
 
     function switchPage(pageId) {
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active-tab'));
@@ -506,7 +557,7 @@
     function openAddMemberModal() { document.getElementById('addMemberModal').style.display = 'flex'; }
     function closeAddModal() { document.getElementById('addMemberModal').style.display = 'none'; }
 
-    async function adjustStat(statType, val) {
+    function adjustStat(statType, val) {
         if (!currentSelectedMember) return;
         if (!stats[currentSelectedMember][statType]) stats[currentSelectedMember][statType] = 0;
         stats[currentSelectedMember][statType] = Math.max(0, stats[currentSelectedMember][statType] + val);
@@ -514,10 +565,10 @@
         
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} ${val > 0 ? '+' + val : val}`, statType);
         renderTeam(); calculateAiUpranks();
-        await pushToCloud();
+        pushToFirebase();
     }
 
-    async function updateStatFromInput(statType) {
+    function updateStatFromInput(statType) {
         if (!currentSelectedMember) return;
         let inputVal = parseInt(document.getElementById(`count-${statType}`).value);
         if (isNaN(inputVal) || inputVal < 0) inputVal = 0;
@@ -525,10 +576,10 @@
         stats[currentSelectedMember][statType] = inputVal;
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} gesetzt auf ${inputVal}`, statType);
         renderTeam(); calculateAiUpranks();
-        await pushToCloud();
+        pushToFirebase();
     }
 
-    async function changeMemberRole() {
+    function changeMemberRole() {
         let newRole = document.getElementById('edit-role').value; 
         let oldRole = stats[currentSelectedMember].role;
         if(oldRole === newRole) return;
@@ -540,29 +591,29 @@
         
         addLogItem(`🔼 BEFÖRDERUNG: ${currentSelectedMember} von ${oldRole} zu ${newRole}`, 'uprank');
         renderTeam(); calculateAiUpranks();
-        await pushToCloud();
+        pushToFirebase();
     }
 
-    async function saveTextLog() {
+    function saveTextLog() {
         let txt = document.getElementById('modal-text-log').value; 
         if(!txt.trim()) return;
         addLogItem(`📝 NOTIZ für ${currentSelectedMember}: ${txt}`, 'einreisen');
         document.getElementById('modal-text-log').value = ""; 
         calculateAiUpranks();
-        await pushToCloud();
+        pushToFirebase();
     }
 
-    async function deleteMember() {
+    function deleteMember() {
         if(!confirm(`Möchtest du ${currentSelectedMember} wirklich löschen?`)) return;
         let role = stats[currentSelectedMember].role; 
         teamData[role] = teamData[role].filter(n => n !== currentSelectedMember);
         delete stats[currentSelectedMember]; 
         addLogItem(`❌ TEAM-KICK: ${currentSelectedMember} wurde entfernt.`, 'kick');
         closeModal(); renderTeam(); calculateAiUpranks();
-        await pushToCloud();
+        pushToFirebase();
     }
 
-    async function addMember() {
+    function addMember() {
         let name = document.getElementById('add-name').value.trim(); 
         let role = document.getElementById('add-role').value;
         if(!name) return alert("Bitte Namen eingeben!");
@@ -572,20 +623,19 @@
         addLogItem(`📥 NEUES MITGLIED: ${name} als ${role} beigetreten.`, 'uprank');
         closeAddModal(); document.getElementById('add-name').value = ""; 
         renderTeam(); calculateAiUpranks();
-        await pushToCloud();
+        pushToFirebase();
     }
 
     function addLogItem(message, category) {
         let now = new Date().toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
         textLogs.unshift({time: now, msg: message, id: Date.now(), cat: category});
-        saveLocally();
         renderLogs();
     }
 
-    async function removeLog(id) {
+    function removeLog(id) {
         textLogs = textLogs.filter(l => l.id !== id);
         renderLogs();
-        await pushToCloud();
+        pushToFirebase();
     }
 
     function renderLogs() {
@@ -633,7 +683,22 @@
         }
     }
 
-    document.body.style.display = 'block';
+    // NORMALE ENTWICKLER-FUNKTIONEN IN GLOBALEN SCOPE EXPORTIEREN (FÜR ONCLICK EVENT HANDLER)
+    window.handleLogin = handleLogin;
+    window.handleRegister = handleRegister;
+    window.handleLogout = handleLogout;
+    window.switchPage = switchPage;
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+    window.openAddMemberModal = openAddMemberModal;
+    window.closeAddModal = closeAddModal;
+    window.adjustStat = adjustStat;
+    window.updateStatFromInput = updateStatFromInput;
+    window.changeMemberRole = changeMemberRole;
+    window.saveTextLog = saveTextLog;
+    window.deleteMember = deleteMember;
+    window.addMember = addMember;
+    window.removeLog = removeLog;
 </script>
 </body>
 </html>

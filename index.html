@@ -332,12 +332,11 @@
     ];
 
     let saveTimeout;
-    let isEditingDoc = false; // Verhindert Überschreiben beim Tippen
+    let localTyping = false;
 
-    // MEHRERE BENUTZER GLEICHZEITIG ER LAUBEN
     function checkLogin() {
         if(document.getElementById('login-username').value === "Maloracity" && document.getElementById('login-password').value === "Maloracity110") {
-            sessionStorage.setItem('malora_session_active', 'true'); // Nutzt Session storage statt LocalStorage
+            sessionStorage.setItem('malora_session_active', 'true');
             showMainUI();
         } else { 
             document.getElementById('login-error').style.display = 'block'; 
@@ -356,8 +355,14 @@
         document.getElementById('main-interface').style.display = 'block';
         document.body.style.display = 'block';
         
+        // Beim Start direkt den lokalen Stand laden (damit nie was weg ist)
+        const savedText = localStorage.getItem('malora_tb_notes_permanent');
+        if (savedText !== null) {
+            document.getElementById('live-google-doc').value = savedText;
+        }
+
         loadLiveNotes(); 
-        setInterval(loadLiveNotes, 2000); // 2-Sekunden Takt für echte Live-Sync
+        setInterval(loadLiveNotes, 2000); 
     }
 
     window.onload = () => {
@@ -570,24 +575,26 @@
         }
     }
 
-    // REALTIME CLOUD FETCH
+    // ECHTES LIVE SYNC (HAUPTFUNKTION)
     async function loadLiveNotes() {
-        if (isEditingDoc) return; // Wenn du gerade tippst, überschreiben wir deine Eingabe nicht!
-
         try {
             let res = await fetch(BIN_URL + "/latest", { headers: { "X-Master-Key": MASTER_KEY } });
             let data = await res.json(); 
-            let record = data.record;
+            let record = data.record || {};
             
             liveNotes = record.notes || []; 
             renderLiveNotes();
             
             let docElement = document.getElementById('live-google-doc');
-            if (record.docText !== undefined && document.activeElement !== docElement) {
-                docElement.value = record.docText;
+            // Nur aktualisieren, wenn der Kollege etwas geschrieben hat und man selbst gerade nicht tippt
+            if (record.docText !== undefined && !localTyping) {
+                if (docElement.value !== record.docText) {
+                    docElement.value = record.docText;
+                    localStorage.setItem('malora_tb_notes_permanent', record.docText);
+                }
             }
         } catch (err) { 
-            console.log("Sync wartet..."); 
+            console.log("Sync verbindet neu..."); 
         }
     }
 
@@ -624,17 +631,22 @@
     }
 
     function triggerDocCloudSave() {
-        isEditingDoc = true;
-        document.getElementById('doc-sync-status').innerText = "Speichert live...";
+        localTyping = true;
+        let currentText = document.getElementById('live-google-doc').value;
+        
+        // Permanent lokal sichern, damit es beim Neuladen NIEMALS weg ist
+        localStorage.setItem('malora_tb_notes_permanent', currentText);
+
+        document.getElementById('doc-sync-status').innerText = "Tippt...";
         document.getElementById('doc-sync-status').style.color = "#fbbf24";
 
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(async () => {
             await saveCloudData();
-            isEditingDoc = false;
+            localTyping = false;
             document.getElementById('doc-sync-status').innerText = "Dokument synchronisiert ✓";
             document.getElementById('doc-sync-status').style.color = "#4ade80";
-        }, 1000);
+        }, 800);
     }
 
     async function saveCloudData() {
@@ -661,7 +673,7 @@
             }
         }
         if(suggestions.length === 0) { 
-            aiDiv.innerHTML = `<div style="font-size:0.8rem; color:#a0aec0; text-align:center; padding:10px;">Vergib Punkte für AI Tipps.</div>`; 
+            aiDiv.innerHTML = `<div style="font-size:0.8rem; color:#a0aec0; text-align:center; padding:10px;">Vergib Punkte für KI-Tipps.</div>`; 
         } else {
             let html = ""; 
             suggestions.forEach(s => { 

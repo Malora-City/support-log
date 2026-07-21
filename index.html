@@ -158,7 +158,7 @@
         </header>
         
         <div class="card" style="border: 1px solid var(--neon);">
-            <h2>📝 LIVE-DOKUMENT (TB-VORBEREITUNG)</h2>
+            <h2>📝 LIVE-DOKUMENTE (TB-VORBEREITUNG)</h2>
             <iframe src="https://pad.riseup.net/p/maloracity_tb_doc_live" style="width: 100%; height: 500px; border: 1px solid var(--border); border-radius: 8px; background: #fff; margin-top: 10px;"></iframe>
         </div>
     </div>
@@ -337,6 +337,7 @@
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('main-interface').style.display = 'block';
         document.body.style.display = 'block';
+        loadSharedData();
     }
 
     window.onload = () => {
@@ -347,7 +348,28 @@
         }
     };
 
-    let teamData = JSON.parse(localStorage.getItem('malora_team_structure')) || {
+    function loadSharedData() {
+        let savedTeam = localStorage.getItem('malora_team_structure_shared');
+        if (savedTeam) teamData = JSON.parse(savedTeam);
+
+        let savedStats = localStorage.getItem('malora_member_stats_shared');
+        if (savedStats) stats = JSON.parse(savedStats);
+
+        let savedLogs = localStorage.getItem('malora_management_logs_shared');
+        if (savedLogs) textLogs = JSON.parse(savedLogs);
+
+        initStats();
+        renderTeam();
+        renderLogs();
+    }
+
+    function saveSharedData() {
+        localStorage.setItem('malora_team_structure_shared', JSON.stringify(teamData));
+        localStorage.setItem('malora_member_stats_shared', JSON.stringify(stats));
+        localStorage.setItem('malora_management_logs_shared', JSON.stringify(textLogs));
+    }
+
+    let teamData = {
         "Projektleitung": ["@MC | Lyrox™"], "Stv. Projektleitung": ["@MC | DonXVitoo™", "@MC | Tobi👀"], 
         "Teamleitung": ["@MC | Paul", "@MC | ZmtxTV 👀"], "Stv. Teamleitung": ["@MC | CityNeko 👀"], 
         "Fraktionsverwaltungleitung": ["@MC | Jaden", "@MC | John"], "Fraktionsverwaltung": [], 
@@ -365,10 +387,11 @@
         "Einreisebeamter": ["@MC | ★ R Y Z E ★", "@MC | Aspy", "@MC | HIRA", "@MC | IDropMyTable", "@MC | Jamal", "@MC | Kellox", "@MC | MD-02 368kk", "@MC | syzulex", "@MC | Nick.exe"]
     };
 
-    let stats = JSON.parse(localStorage.getItem('malora_member_stats')) || {};
-    let textLogs = JSON.parse(localStorage.getItem('malora_management_logs')) || [];
+    let stats = {};
+    let textLogs = [];
 
     function switchPage(pageId) {
+        loadSharedData();
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active-tab'));
         document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active-page'));
         
@@ -393,6 +416,7 @@
     }
 
     function renderTeam() {
+        loadSharedData();
         let container = document.getElementById('team-roster'); 
         container.innerHTML = "";
         
@@ -425,12 +449,10 @@
             section.appendChild(grid); 
             container.appendChild(section);
         });
-
-        localStorage.setItem('malora_member_stats', JSON.stringify(stats));
-        localStorage.setItem('malora_team_structure', JSON.stringify(teamData));
     }
 
     function openModal(name) {
+        loadSharedData();
         currentSelectedMember = name; 
         document.getElementById('modalMemberName').innerText = name;
         document.getElementById('count-tickets').value = stats[name].tickets || 0; 
@@ -444,7 +466,7 @@
         document.getElementById('memberModal').style.display = 'flex';
     }
 
-    function closeModal() { document.getElementById('memberModal').style.display = 'none'; }
+    function closeModal() { document.getElementById('memberModal').style.display = 'none'; renderTeam(); }
     function openAddMemberModal() { document.getElementById('addMemberModal').style.display = 'flex'; }
     function closeAddModal() { document.getElementById('addMemberModal').style.display = 'none'; }
 
@@ -455,6 +477,7 @@
         document.getElementById(`count-${statType}`).value = stats[currentSelectedMember][statType];
         
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} ${val > 0 ? '+' + val : val}`, statType);
+        saveSharedData();
         renderTeam(); calculateAiUpranks();
     }
 
@@ -465,6 +488,7 @@
         
         stats[currentSelectedMember][statType] = inputVal;
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} gesetzt auf ${inputVal}`, statType);
+        saveSharedData();
         renderTeam(); calculateAiUpranks();
     }
 
@@ -479,6 +503,7 @@
         stats[currentSelectedMember].role = newRole;
         
         addLogItem(`🔼 BEFÖRDERUNG: ${currentSelectedMember} von ${oldRole} zu ${newRole}`, 'uprank');
+        saveSharedData();
         renderTeam(); calculateAiUpranks();
     }
 
@@ -487,6 +512,7 @@
         if(!txt.trim()) return;
         addLogItem(`📝 NOTIZ für ${currentSelectedMember}: ${txt}`, 'einreisen');
         document.getElementById('modal-text-log').value = ""; 
+        saveSharedData();
         calculateAiUpranks();
     }
 
@@ -496,6 +522,7 @@
         teamData[role] = teamData[role].filter(n => n !== currentSelectedMember);
         delete stats[currentSelectedMember]; 
         addLogItem(`❌ TEAM-KICK: ${currentSelectedMember} wurde entfernt.`, 'kick');
+        saveSharedData();
         closeModal(); renderTeam(); calculateAiUpranks();
     }
 
@@ -507,6 +534,7 @@
         teamData[role].push(name);
         stats[name] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: role };
         addLogItem(`📥 NEUES MITGLIED: ${name} als ${role} beigetreten.`, 'uprank');
+        saveSharedData();
         closeAddModal(); document.getElementById('add-name').value = ""; 
         renderTeam(); calculateAiUpranks();
     }
@@ -514,17 +542,18 @@
     function addLogItem(message, category) {
         let now = new Date().toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
         textLogs.unshift({time: now, msg: message, id: Date.now(), cat: category});
-        localStorage.setItem('malora_management_logs', JSON.stringify(textLogs));
+        saveSharedData();
         renderLogs();
     }
 
     function removeLog(id) {
         textLogs = textLogs.filter(l => l.id !== id);
-        localStorage.setItem('malora_management_logs', JSON.stringify(textLogs));
+        saveSharedData();
         renderLogs();
     }
 
     function renderLogs() {
+        loadSharedData();
         let containers = { 
             tickets: document.getElementById('log-tickets'), supports: document.getElementById('log-supports'), 
             feedbacks: document.getElementById('log-feedbacks'), einreisen: document.getElementById('log-einreisen'), 
@@ -569,7 +598,8 @@
     }
 
     document.body.style.display = 'block';
-    initStats(); renderTeam(); renderLogs(); calculateAiUpranks();
+    loadSharedData();
+    calculateAiUpranks();
 </script>
 </body>
 </html>

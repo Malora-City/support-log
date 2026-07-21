@@ -534,6 +534,11 @@ input, select, textarea {
     transition: var(--transition);
 }
 
+select option {
+    background-color: #0f1626;
+    color: #fff;
+}
+
 input:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--primary);

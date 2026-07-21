@@ -248,33 +248,7 @@
 
         <hr style="border-color:var(--border); margin: 12px 0;">
         <label style="font-size: 0.85rem; color: #a0aec0;">Rolle ändern:</label>
-        <select id="edit-role" onchange="changeMemberRole()">
-            <option value="Projektleitung">Projektleitung</option>
-            <option value="Stv. Projektleitung">Stv. Projektleitung</option>
-            <option value="Teamleitung">Teamleitung</option>
-            <option value="Stv. Teamleitung">Stv. Teamleitung</option>
-            <option value="Fraktionsverwaltungleitung">Fraktionsverwaltungleitung</option>
-            <option value="Fraktionsverwaltung">Fraktionsverwaltung</option>
-            <option value="Head Developer">Head Developer</option>
-            <option value="Developer">Developer</option>
-            <option value="Jr. Developer">Jr. Developer</option>
-            <option value="Head Analyst">Head Analyst</option>
-            <option value="Analyst">Analyst</option>
-            <option value="Probe Analyst">Probe Analyst</option>
-            <option value="Head Administrator">Head Administrator</option>
-            <option value="Sr. Administrator">Sr. Administrator</option>
-            <option value="Administrator">Administrator</option>
-            <option value="Test-Administrator">Test-Administrator</option>
-            <option value="Head Moderator">Head Moderator</option>
-            <option value="Sr. Moderator">Sr. Moderator</option>
-            <option value="Moderator">Moderator</option>
-            <option value="Test - Moderator">Test - Moderator</option>
-            <option value="Head Supporter">Head Supporter</option>
-            <option value="Sr. Supporter">Sr. Supporter</option>
-            <option value="Supporter">Supporter</option>
-            <option value="Test Supporter">Test Supporter</option>
-            <option value="Einreisebeamter">Einreisebeamter</option>
-        </select>
+        <select id="edit-role" onchange="changeMemberRole()"></select>
 
         <textarea id="modal-text-log" placeholder="Zusätzliche Notiz ins Archiv schreiben..."></textarea>
         <button class="action-btn" onclick="saveTextLog()">Notiz hinzufügen</button>
@@ -291,14 +265,7 @@
             <span class="close-btn" onclick="closeAddModal()">&times;</span>
         </div>
         <input type="text" id="add-name" placeholder="z.B. @MC | Name">
-        <select id="add-role">
-            <option value="Test Supporter">Test Supporter</option>
-            <option value="Supporter">Supporter</option>
-            <option value="Einreisebeamter">Einreisebeamter</option>
-            <option value="Probe Analyst">Probe Analyst</option>
-            <option value="Analyst">Analyst</option>
-            <option value="Test - Moderator">Test - Moderator</option>
-        </select>
+        <select id="add-role"></select>
         <button class="action-btn" onclick="addMember()">Hinzufügen</button>
         <button class="action-btn" style="background:#4a5568;" onclick="closeAddModal()">Abbrechen</button>
     </div>
@@ -344,6 +311,23 @@
         "Sr. Moderator", "Moderator", "Test - Moderator", "Head Supporter", "Sr. Supporter", 
         "Supporter", "Test Supporter", "Einreisebeamter"
     ];
+
+    // Rollen-Dropdowns dynamisch befüllen
+    const addRoleSelect = document.getElementById('add-role');
+    const editRoleSelect = document.getElementById('edit-role');
+    if (addRoleSelect && editRoleSelect) {
+        roleOrder.forEach(role => {
+            const opt1 = document.createElement('option');
+            opt1.value = role;
+            opt1.textContent = role;
+            addRoleSelect.appendChild(opt1);
+
+            const opt2 = document.createElement('option');
+            opt2.value = role;
+            opt2.textContent = role;
+            editRoleSelect.appendChild(opt2);
+        });
+    }
 
     let currentSelectedMember = "";
 

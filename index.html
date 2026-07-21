@@ -4,95 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maloracity - Management Zentrale</title>
-    <style>
-        :root { 
-            --neon: #45f3ff; 
-            --bg: #0b0c10; 
-            --card: #131921; 
-            --border: #2f3e46; 
-        }
-        
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: var(--bg); color: #c5c6c7; padding: 15px; min-height: 100vh; display: none; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        
-        /* LOGIN SCREEN */
-        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-        .login-box { background: #1f2833; padding: 40px 30px; border-radius: 12px; border: 2px solid var(--neon); width: 100%; max-width: 380px; text-align: center; box-shadow: 0 0 25px rgba(69,243,255,0.2); }
-        .login-box h2 { color: var(--neon); margin-top: 15px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; font-size: 1.5rem; }
-        
-        .logo-css { width: 90px; height: 90px; background: #151a21; border: 3px solid var(--neon); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; font-weight: 900; color: var(--neon); text-shadow: 0 0 15px var(--neon); box-shadow: 0 0 20px rgba(69,243,255,0.3); margin: 0 auto; animation: pulse 2.5s infinite; }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.04); box-shadow: 0 0 25px rgba(69,243,255,0.5); }
-            100% { transform: scale(1); }
-        }
-
-        /* TOP BAR */
-        .header-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .logout-btn { background: #d9534f; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; }
-
-        /* TABS */
-        .main-nav { display: flex; background: #1f2833; border-radius: 8px 8px 0 0; border: 1px solid var(--border); border-bottom: none; overflow: hidden; margin-top: 5px; }
-        .nav-tab { flex: 1; text-align: center; padding: 15px 10px; cursor: pointer; font-weight: bold; font-size: 0.95rem; color: #a0aec0; transition: 0.2s; background: #151a21; }
-        .nav-tab:hover { color: var(--neon); }
-        .nav-tab.active-tab { color: var(--neon); background: #1f2833; border-bottom: 3px solid var(--neon); }
-
-        .page-content { display: none; background: #1f2833; border: 1px solid var(--border); border-radius: 0 0 8px 8px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .page-content.active-page { display: block; }
-        
-        header { padding: 20px 0; margin-bottom: 20px; text-align: center; border-bottom: 1px solid var(--border); }
-        header h1 { color: var(--neon); text-transform: uppercase; font-size: 1.8rem; letter-spacing: 1px; margin-top: 10px; }
-        
-        .main-layout { display: flex; flex-direction: column; gap: 20px; }
-        @media(min-width: 992px) { .main-layout { flex-direction: row; } .column-left { flex: 3; } .column-right { flex: 1; min-width: 350px; } }
-
-        .card { background: #131921; border-radius: 12px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
-        .card h2 { color: var(--neon); text-transform: uppercase; font-size: 1.2rem; margin-bottom: 15px; border-left: 4px solid var(--neon); padding-left: 10px; }
-        
-        /* TEAM GRID */
-        .role-section { border-bottom: 1px solid var(--border); padding: 12px 0; }
-        .role-section:last-child { border-bottom: none; }
-        .role-title { font-weight: bold; color: #66fcf1; font-size: 0.95rem; text-transform: uppercase; margin-bottom: 10px; }
-        .member-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-        
-        .member-card { background: var(--bg); border: 1px solid var(--neon); padding: 10px 14px; border-radius: 8px; cursor: pointer; transition: 0.2s; min-width: 140px; flex-grow: 1; text-align: center; }
-        .member-card:hover { transform: translateY(-2px); box-shadow: 0 0 10px rgba(69,243,255,0.3); }
-        .member-name { font-weight: bold; font-size: 0.9rem; color: #fff; word-break: break-all; }
-        .member-stats-preview { font-size: 0.72rem; color: #a0aec0; margin-top: 4px; line-height: 1.4; }
-
-        .ai-item { background: #101712; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
-        .ai-header { font-weight: bold; color: #4ade80; font-size: 0.9rem; margin-bottom: 4px; }
-        .ai-reason { font-size: 0.8rem; color: #a0aec0; }
-        
-        /* LOG BOXEN */
-        .archive-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        @media(min-width: 768px) { .archive-grid { grid-template-columns: repeat(2, 1fr); } }
-        .archive-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; max-height: 280px; overflow-y: auto; }
-        .archive-box h3 { font-size: 0.9rem; margin-bottom: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--border); text-transform: uppercase; color: #fff; }
-        
-        /* MODAL */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; padding: 10px; }
-        .modal-content { background: #1f2833; border: 2px solid var(--neon); border-radius: 12px; padding: 20px; width: 100%; max-width: 440px; box-shadow: 0 4px 25px rgba(0,0,0,0.6); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-        .modal-header h3 { color: #66fcf1; font-size: 1.2rem; word-break: break-all; }
-        .close-btn { color: #fff; cursor: pointer; font-size: 1.5rem; font-weight: bold; }
-        
-        .counter-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: var(--bg); padding: 8px 12px; border-radius: 6px; }
-        .counter-group span { font-size: 0.9rem; font-weight: bold; }
-        .counter-controls { display: flex; align-items: center; gap: 8px; }
-        .counter-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: var(--neon); color: var(--bg); font-weight: bold; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
-        
-        input.counter-input { width: 55px; padding: 4px; background: #1f2833; border: 1px solid var(--neon); border-radius: 4px; color: #fff; font-size: 0.95rem; font-weight: bold; text-align: center; margin-bottom: 0; }
-
-        input, select, textarea { width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: #fff; margin-bottom: 12px; font-size: 0.9rem; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--neon); }
-        button.action-btn { background: var(--neon); color: var(--bg); border: none; padding: 10px; font-weight: bold; border-radius: 6px; cursor: pointer; text-transform: uppercase; width: 100%; margin-bottom: 8px; font-size: 0.9rem; }
-        button.delete-btn { background: #d9534f; color: #fff; margin-top: 5px; }
-        
-        .log-item { background: #131921; padding: 8px; border-radius: 6px; margin-bottom: 8px; font-size: 0.8rem; border-left: 3px solid var(--neon); display: flex; justify-content: space-between; align-items: center; line-height: 1.3; }
-        .log-delete { color: #d9534f; cursor: pointer; font-weight: bold; margin-left: 8px; font-size: 1rem; padding: 0 4px; }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
@@ -105,44 +19,44 @@
         <input type="password" id="login-password" placeholder="Passwort">
         <div style="display: flex; gap: 8px;">
             <button class="action-btn" onclick="handleLogin()">Einloggen</button>
-            <button class="action-btn" style="background: #38bdf8; color: #0b0c10;" onclick="handleRegister()">Registrieren</button>
+            <button class="action-btn" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: none;" onclick="handleRegister()">Registrieren</button>
         </div>
-        <div id="login-error" style="color: #d9534f; margin-top: 10px; display: none; font-weight: bold; font-size: 0.85rem; word-break: break-word;"></div>
+        <div id="login-error" style="color: var(--danger); margin-top: 10px; display: none; font-weight: bold; font-size: 0.85rem; word-break: break-word;"></div>
     </div>
 </div>
 
 <!-- INTERFACE -->
 <div class="container" id="main-interface" style="display: none;">
     <div class="header-top-bar">
-        <span style="font-size: 0.85rem; color: #a0aec0;">Eingeloggt als: <strong id="user-display-email" style="color: #fff;">...</strong> <span id="sync-indicator" style="color:#4ade80; margin-left:8px;">● Firebase Realtime Verbunden</span></span>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Eingeloggt als: <strong id="user-display-email" style="color: #fff;">...</strong> <span id="sync-indicator" style="color: var(--success); margin-left: 8px;">● Firebase Realtime Verbunden</span></span>
         <button class="logout-btn" onclick="handleLogout()">🚪 Abmelden</button>
     </div>
 
     <div class="main-nav">
-        <div class="nav-tab active-tab" onclick="switchPage('dashboard')">📊 Live Dashboard</div>
-        <div class="nav-tab" onclick="switchPage('pinnwand')">📌 Live Pinnwand & Dokumente</div>
-        <div class="nav-tab" onclick="switchPage('archiv')">🗄️ Log-Archiv</div>
+        <div class="nav-tab active-tab" onclick="switchPage('dashboard')"><i data-lucide="layout-dashboard" style="display: inline-block; vertical-align: middle; margin-right: 6px; width: 18px; height: 18px;"></i> Live Dashboard</div>
+        <div class="nav-tab" onclick="switchPage('pinnwand')"><i data-lucide="clipboard-list" style="display: inline-block; vertical-align: middle; margin-right: 6px; width: 18px; height: 18px;"></i> Live Pinnwand & Dokumente</div>
+        <div class="nav-tab" onclick="switchPage('archiv')"><i data-lucide="archive" style="display: inline-block; vertical-align: middle; margin-right: 6px; width: 18px; height: 18px;"></i> Log-Archiv</div>
     </div>
 
     <!-- SEITE 1: DASHBOARD -->
     <div id="page-dashboard" class="page-content active-page">
         <header>
-            <div class="logo-css" style="width:70px; height:70px; font-size:2.2rem; border-radius:12px;">M</div>
+            <div class="logo-css" style="width: 70px; height: 70px; font-size: 2.2rem; border-radius: var(--radius-md);">M</div>
             <h1>Support & Einreise - Live Zentrale</h1>
         </header>
         <div class="main-layout">
             <div class="column-left">
                 <div class="card">
-                    <h2>Team-Übersicht</h2>
-                    <button class="action-btn" style="margin-bottom:15px; background:#66fcf1;" onclick="openAddMemberModal()">＋ Neues Teammitglied hinzufügen</button>
+                    <h2><i data-lucide="users" style="color: var(--primary); width: 20px; height: 20px; vertical-align: middle; margin-right: 6px;"></i> Team-Übersicht</h2>
+                    <button class="action-btn" style="margin-bottom: 15px; background: var(--primary-gradient); color: #fff; box-shadow: 0 4px 15px var(--primary-glow);" onclick="openAddMemberModal()">＋ Neues Teammitglied hinzufügen</button>
                     <div id="team-roster"></div>
                 </div>
             </div>
             <div class="column-right">
-                <div class="card" style="border: 1px solid #4ade80; background: #0e1611;">
-                    <h2>🚀 Uprank AI Assistent</h2>
+                <div class="card" style="border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.025);">
+                    <h2><i data-lucide="sparkles" style="color: #10b981; width: 20px; height: 20px; vertical-align: middle; margin-right: 6px;"></i> Uprank AI Assistent</h2>
                     <div id="ai-suggestions">
-                        <div style="font-size:0.8rem; color:#a0aec0; text-align:center; padding:10px;">Vergib Punkte für KI-Tipps.</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 10px;">Vergib Punkte für KI-Tipps.</div>
                     </div>
                 </div>
             </div>
@@ -152,33 +66,45 @@
     <!-- SEITE 2: LIVE-DOKUMENTE -->
     <div id="page-pinnwand" class="page-content">
         <header>
-            <div class="logo-css" style="width:70px; height:70px; font-size:2.2rem; border-radius:12px;">M</div>
+            <div class="logo-css" style="width: 70px; height: 70px; font-size: 2.2rem; border-radius: var(--radius-md);">M</div>
             <h1>Teamleitung Live-Dokumente</h1>
         </header>
         
-        <div class="card" style="border: 1px solid var(--neon);">
-            <h2>📝 LIVE-DOKUMENTE (TB-VORBEREITUNG)</h2>
-            <iframe src="https://pad.riseup.net/p/maloracity_tb_doc_live" style="width: 100%; height: 500px; border: 1px solid var(--border); border-radius: 8px; background: #fff; margin-top: 10px;"></iframe>
+        <div class="card" style="border: 1px solid var(--primary);">
+            <h2><i data-lucide="file-text" style="color: var(--primary); width: 20px; height: 20px; vertical-align: middle; margin-right: 6px;"></i> LIVE-DOKUMENTE (TB-VORBEREITUNG)</h2>
+            <iframe src="https://pad.riseup.net/p/maloracity_tb_doc_live" style="width: 100%; height: 500px; border: 1px solid var(--card-border); border-radius: var(--radius-md); background: #fff; margin-top: 10px;"></iframe>
         </div>
     </div>
 
     <!-- SEITE 3: LOG ARCHIV -->
     <div id="page-archiv" class="page-content">
         <header>
-            <div class="logo-css" style="width:70px; height:70px; font-size:2.2rem; border-radius:12px;">M</div>
+            <div class="logo-css" style="width: 70px; height: 70px; font-size: 2.2rem; border-radius: var(--radius-md);">M</div>
             <h1>Management Log-Archiv</h1>
         </header>
         <div class="card">
-            <h2>Getrennte Log-Datenbanken</h2>
-            <div class="archive-grid">
-                <div class="archive-box"><h3 style="color: #60a5fa;">🎫 Tickets-Log</h3><div id="log-tickets"></div></div>
-                <div class="archive-box"><h3 style="color: #38bdf8;">🛠️ Support-Log</h3><div id="log-supports"></div></div>
-                <div class="archive-box"><h3 style="color: #a78bfa;">⭐ Feedback-Log</h3><div id="log-feedbacks"></div></div>
-                <div class="archive-box"><h3 style="color: #34d399;">🛃 Einreisen-Log</h3><div id="log-einreisen"></div></div>
-                <div class="archive-box"><h3 style="color: #fb923c;">🛬 Ausreise-Log</h3><div id="log-ausreisen"></div></div>
-                <div class="archive-box"><h3 style="color: #f87171;">🚫 Banned-Log</h3><div id="log-banne"></div></div>
-                <div class="archive-box"><h3 style="color: #fbbf24;">🔼 Beförderungen (Uprank)</h3><div id="log-upranks"></div></div>
-                <div class="archive-box"><h3 style="color: #ef4444;">❌ Kicks & Ausreise</h3><div id="log-kicks"></div></div>
+            <h2><i data-lucide="folder-search" style="color: var(--primary); width: 20px; height: 20px; vertical-align: middle; margin-right: 6px;"></i> Unified Log-Archiv Explorer</h2>
+            <div class="log-dashboard">
+                <!-- Quick Filters -->
+                <div class="log-filters" id="log-filters">
+                    <button class="filter-btn active-filter" onclick="filterLogs('all', event)">Alle Einträge</button>
+                    <button class="filter-btn" onclick="filterLogs('tickets', event)" style="border-bottom: 2px solid #60a5fa;">🎫 Tickets-Log</button>
+                    <button class="filter-btn" onclick="filterLogs('supports', event)" style="border-bottom: 2px solid #38bdf8;">🛠️ Support-Log</button>
+                    <button class="filter-btn" onclick="filterLogs('feedbacks', event)" style="border-bottom: 2px solid #a78bfa;">⭐ Feedback-Log</button>
+                    <button class="filter-btn" onclick="filterLogs('einreisen', event)" style="border-bottom: 2px solid #34d399;">🛃 Einreisen-Log</button>
+                    <button class="filter-btn" onclick="filterLogs('ausreisen', event)" style="border-bottom: 2px solid #fb923c;">🛬 Ausreise-Log</button>
+                    <button class="filter-btn" onclick="filterLogs('banne', event)" style="border-bottom: 2px solid #f87171;">🚫 Banned-Log</button>
+                    <button class="filter-btn" onclick="filterLogs('uprank', event)" style="border-bottom: 2px solid #fbbf24;">🔼 Beförderungen (Uprank)</button>
+                    <button class="filter-btn" onclick="filterLogs('kick', event)" style="border-bottom: 2px solid #ef4444;">❌ Kicks & Ausreise</button>
+                </div>
+                
+                <!-- Search and Stats -->
+                <div class="log-search-container">
+                    <input type="text" id="log-search" class="log-search-input" placeholder="🔍 Nach Name, Aktion oder Inhalt filtern..." oninput="renderLogs()">
+                </div>
+                
+                <!-- Log List Container -->
+                <div class="log-container" id="unified-log-list"></div>
             </div>
         </div>
     </div>
@@ -502,6 +428,9 @@
             document.querySelectorAll('.nav-tab')[2].classList.add('active-tab'); 
             document.getElementById('page-archiv').classList.add('active-page'); 
         }
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     }
 
     function initStats() { 
@@ -536,7 +465,7 @@
             grid.className = 'member-grid';
             
             if(teamData[role].length === 0) { 
-                grid.innerHTML = '<span style="color:#555; font-size:0.8rem;">Keine Mitglieder</span>'; 
+                grid.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem; font-style: italic; padding-left: 4px;">Keine Mitglieder</span>'; 
             } else {
                 teamData[role].forEach(name => {
                     let mStats = stats[name] || { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0 };
@@ -550,6 +479,9 @@
             section.appendChild(grid); 
             container.appendChild(section);
         });
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     }
 
     function openModal(name) {
@@ -652,26 +584,47 @@
         pushToFirebase();
     }
 
-    function renderLogs() {
-        let containers = { 
-            tickets: document.getElementById('log-tickets'), supports: document.getElementById('log-supports'), 
-            feedbacks: document.getElementById('log-feedbacks'), einreisen: document.getElementById('log-einreisen'), 
-            ausreisen: document.getElementById('log-ausreisen'), banne: document.getElementById('log-banne'), 
-            uprank: document.getElementById('log-upranks'), kick: document.getElementById('log-kicks') 
-        };
-        for(let key in containers) { if(containers[key]) containers[key].innerHTML = ""; }
-        let counts = { tickets:0, supports:0, feedbacks:0, einreisen:0, ausreisen:0, banne:0, uprank:0, kick:0 };
-        
-        textLogs.forEach(l => {
-            if(containers[l.cat]) {
-                counts[l.cat]++;
-                containers[l.cat].innerHTML += `<div class="log-item"><span><strong>[${l.time}]</strong> ${l.msg}</span><span class="log-delete" onclick="removeLog(${l.id})">&times;</span></div>`;
-            }
+    let currentLogFilter = 'all';
+
+    function filterLogs(category, event) {
+        currentLogFilter = category;
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active-filter');
         });
-        for(let key in containers) { 
-            if(containers[key] && counts[key] === 0) { 
-                containers[key].innerHTML = '<p style="color:#555; font-size:0.8rem;">Keine Einträge.</p>'; 
-            } 
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.add('active-filter');
+        }
+        renderLogs();
+    }
+
+    function renderLogs() {
+        const container = document.getElementById('unified-log-list');
+        if (!container) return;
+        container.innerHTML = "";
+        
+        const searchQuery = document.getElementById('log-search') ? document.getElementById('log-search').value.toLowerCase() : "";
+        let displayedCount = 0;
+
+        textLogs.forEach(l => {
+            // Category filter
+            if (currentLogFilter !== 'all' && l.cat !== currentLogFilter) return;
+            
+            // Search filter
+            if (searchQuery && !l.msg.toLowerCase().includes(searchQuery) && !l.time.toLowerCase().includes(searchQuery)) return;
+
+            displayedCount++;
+            const itemClass = `log-item cat-${l.cat}`;
+            
+            container.innerHTML += `
+                <div class="${itemClass}">
+                    <span><strong>[${l.time}]</strong> ${l.msg}</span>
+                    <span class="log-delete" onclick="removeLog(${l.id})">&times;</span>
+                </div>
+            `;
+        });
+
+        if (displayedCount === 0) {
+            container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.95rem; text-align: center; padding: 40px 0; font-style: italic;">Keine passenden Einträge im Archiv gefunden.</p>';
         }
     }
 
@@ -713,6 +666,8 @@
     window.deleteMember = deleteMember;
     window.addMember = addMember;
     window.removeLog = removeLog;
+    window.filterLogs = filterLogs;
+    window.renderLogs = renderLogs;
 </script>
 </body>
 </html>

@@ -111,7 +111,7 @@
 <!-- INTERFACE -->
 <div class="container" id="main-interface" style="display: none;">
     <div class="header-top-bar">
-        <span style="font-size: 0.85rem; color: #a0aec0;">Eingeloggt als Leitungs-Mitglied <span id="cloud-status" style="color:#4ade80; margin-left:8px;">● Live Cloud Aktiv</span></span>
+        <span style="font-size: 0.85rem; color: #a0aec0;">Eingeloggt als Leitungs-Mitglied <span id="sync-indicator" style="color:#4ade80; margin-left:8px;">● Live Verbunden</span></span>
         <button class="logout-btn" onclick="logout()">🚪 Abmelden</button>
     </div>
 
@@ -181,7 +181,7 @@
     </div>
 </div>
 
-<!-- POPUP MODAL BEARBEITEN -->
+<!-- POPUP MODAL -->
 <div id="memberModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -302,7 +302,7 @@
 </div>
 
 <script>
-    // CLOUD DATABASE CONFIG (JSONBin - Universelle Live Schnittstelle)
+    // BIN & MASTER KEY FÜR LIVE SYNC
     const BIN_URL = "https://api.jsonbin.io/v3/b/669ab3d7acd3cb34a86903f5";
     const MASTER_KEY = "$2b$10$U4K8pZbeF7H9lDcoV0Z9/.bS3eun2A6U4vWf.qWwNn9b.NGeJHeI.";
 
@@ -317,6 +317,29 @@
 
     let currentSelectedMember = "";
     let isSaving = false;
+
+    let defaultTeamData = {
+        "Projektleitung": ["@MC | Lyrox™"], "Stv. Projektleitung": ["@MC | DonXVitoo™", "@MC | Tobi👀"], 
+        "Teamleitung": ["@MC | Paul", "@MC | ZmtxTV 👀"], "Stv. Teamleitung": ["@MC | CityNeko 👀"], 
+        "Fraktionsverwaltungleitung": ["@MC | Jaden", "@MC | John"], "Fraktionsverwaltung": [], 
+        "Head Developer": ["@MC | Knoppers.exe"], "Developer": [], "Jr. Developer": ["@OnlyError"], 
+        "Head Analyst": ["@MC | Hassan", "<@727523575950606396>", "@MC | Ling.js", "@MC | Turbo.dll"], 
+        "Analyst": ["<@562260580988092475>", "<@772069989582110732>", "@MC | Lias", "@MC | Ling.js", "<@148278991352164494>"], 
+        "Probe Analyst": [], "Head Administrator": ["@MC | Pauli™"], "Sr. Administrator": ["@MC | Patrick 👀"], 
+        "Administrator": ["@MC | HIRA", "@MC | Lenny"], "Test-Administrator": ["@MC I Eliasdwd"], 
+        "Head Moderator": ["@MC | Matti"], "Sr. Moderator": [], 
+        "Moderator": ["@MC | ★ R Y Z E ★", "@MC | Exy.lua", "@MC | Knobi", "@MC | Līåm™", "@MC | Sidney"], 
+        "Test - Moderator": ["@MC | zonex", "@MC | Andre ✝"], "Head Supporter": [], 
+        "Sr. Supporter": ["@MC | Kellox"], 
+        "Supporter": ["@MC | Aspy", "@MC | IDropMyTable", "@MC | Jamal", "@MC | Klaisnax", "@MC | MD-01 Tim Dlnaro", "@MC | MD-02 368kk", "<@381082149803261954>", "@MC | Tristan Tiefprais", "@MC | Vito Nacé", "@MC I Jonas👀", "@MC I Louis", "@MC I Nick.exe"], 
+        "Test Supporter": ["<@1456434493236711499>", "@MC | Dave Shanke", "<@704072513617133638>", "<@1066692526158905346>", "<@1266035889209872489>", "@MC | Luca Abi", "@MC | Nick", "@MC | syzulex", "@MC l Jay"], 
+        "Einreisebeamter": ["@MC | ★ R Y Z E ★", "@MC | Aspy", "@MC | HIRA", "@MC | IDropMyTable", "@MC | Jamal", "@MC | Kellox", "@MC | MD-02 368kk", "@MC | syzulex", "@MC | Nick.exe"]
+    };
+
+    // PURE LOKALE UND CLOUD VARIABLEN LADE-STRATEGIE (VERHINDERT LÖSCHEN BEIM REFRESH)
+    let teamData = JSON.parse(localStorage.getItem('malora_team_perm')) || defaultTeamData;
+    let stats = JSON.parse(localStorage.getItem('malora_stats_perm')) || {};
+    let textLogs = JSON.parse(localStorage.getItem('malora_logs_perm')) || [];
 
     function checkLogin() {
         if(document.getElementById('login-username').value === "Maloracity" && document.getElementById('login-password').value === "Maloracity110") {
@@ -339,8 +362,14 @@
         document.getElementById('main-interface').style.display = 'block';
         document.body.style.display = 'block';
         
-        loadGlobalCloudData();
-        setInterval(loadGlobalCloudData, 2500); // Alle 2.5 Sekunden im Hintergrund synchronisieren!
+        initStats();
+        renderTeam();
+        renderLogs();
+        calculateAiUpranks();
+
+        // Starte Live Cloud Abgleich
+        syncFromCloud();
+        setInterval(syncFromCloud, 3000);
     }
 
     window.onload = () => {
@@ -351,50 +380,41 @@
         }
     };
 
-    let teamData = {
-        "Projektleitung": ["@MC | Lyrox™"], "Stv. Projektleitung": ["@MC | DonXVitoo™", "@MC | Tobi👀"], 
-        "Teamleitung": ["@MC | Paul", "@MC | ZmtxTV 👀"], "Stv. Teamleitung": ["@MC | CityNeko 👀"], 
-        "Fraktionsverwaltungleitung": ["@MC | Jaden", "@MC | John"], "Fraktionsverwaltung": [], 
-        "Head Developer": ["@MC | Knoppers.exe"], "Developer": [], "Jr. Developer": ["@OnlyError"], 
-        "Head Analyst": ["@MC | Hassan", "<@727523575950606396>", "@MC | Ling.js", "@MC | Turbo.dll"], 
-        "Analyst": ["<@562260580988092475>", "<@772069989582110732>", "@MC | Lias", "@MC | Ling.js", "<@148278991352164494>"], 
-        "Probe Analyst": [], "Head Administrator": ["@MC | Pauli™"], "Sr. Administrator": ["@MC | Patrick 👀"], 
-        "Administrator": ["@MC | HIRA", "@MC | Lenny"], "Test-Administrator": ["@MC I Eliasdwd"], 
-        "Head Moderator": ["@MC | Matti"], "Sr. Moderator": [], 
-        "Moderator": ["@MC | ★ R Y Z E ★", "@MC | Exy.lua", "@MC | Knobi", "@MC | Līåm™", "@MC | Sidney"], 
-        "Test - Moderator": ["@MC | zonex", "@MC | Andre ✝"], "Head Supporter": [], 
-        "Sr. Supporter": ["@MC | Kellox"], 
-        "Supporter": ["@MC | Aspy", "@MC | IDropMyTable", "@MC | Jamal", "@MC | Klaisnax", "@MC | MD-01 Tim Dlnaro", "@MC | MD-02 368kk", "<@381082149803261954>", "@MC | Tristan Tiefprais", "@MC | Vito Nacé", "@MC I Jonas👀", "@MC I Louis", "@MC I Nick.exe"], 
-        "Test Supporter": ["<@1456434493236711499>", "@MC | Dave Shanke", "<@704072513617133638>", "<@1066692526158905346>", "<@1266035889209872489>", "@MC | Luca Abi", "@MC | Nick", "@MC | syzulex", "@MC l Jay"], 
-        "Einreisebeamter": ["@MC | ★ R Y Z E ★", "@MC | Aspy", "@MC | HIRA", "@MC | IDropMyTable", "@MC | Jamal", "@MC | Kellox", "@MC | MD-02 368kk", "@MC | syzulex", "@MC | Nick.exe"]
-    };
+    function saveLocally() {
+        localStorage.setItem('malora_team_perm', JSON.stringify(teamData));
+        localStorage.setItem('malora_stats_perm', JSON.stringify(stats));
+        localStorage.setItem('malora_logs_perm', JSON.stringify(textLogs));
+    }
 
-    let stats = {};
-    let textLogs = [];
-
-    // GLOBALE LIVE CLOUD SYNCHRONISATION
-    async function loadGlobalCloudData() {
-        if (isSaving) return; // Nicht überschreiben während man gerade selbst speichert
+    async function syncFromCloud() {
+        if (isSaving) return;
         try {
-            let res = await fetch(BIN_URL, { headers: { "X-Master-Key": MASTER_KEY } });
-            let data = await res.json();
-            if (data && data.record) {
-                let rec = data.record;
-                if (rec.teamData) teamData = rec.teamData;
-                if (rec.stats) stats = rec.stats;
-                if (rec.textLogs) textLogs = rec.textLogs;
+            let res = await fetch(BIN_URL + "/latest", { 
+                headers: { "X-Master-Key": MASTER_KEY, "cache-control": "no-cache" } 
+            });
+            if (res.ok) {
+                let data = await res.json();
+                let rec = data.record || {};
                 
-                initStats();
-                renderTeam();
-                renderLogs();
-                calculateAiUpranks();
+                if (rec.stats && Object.keys(rec.stats).length > 0) {
+                    // Verhindere leeres Überschreiben
+                    teamData = rec.teamData || teamData;
+                    stats = rec.stats || stats;
+                    textLogs = rec.textLogs || textLogs;
+                    
+                    saveLocally();
+                    renderTeam();
+                    renderLogs();
+                    calculateAiUpranks();
+                }
             }
-        } catch (err) {
-            console.log("Cloud-Abfrage läuft...");
+        } catch (e) {
+            console.log("Sync wartet...");
         }
     }
 
-    async function saveGlobalCloudData() {
+    async function pushToCloud() {
+        saveLocally();
         isSaving = true;
         try {
             await fetch(BIN_URL, {
@@ -402,8 +422,8 @@
                 headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY },
                 body: JSON.stringify({ teamData: teamData, stats: stats, textLogs: textLogs })
             });
-        } catch (err) {
-            console.log("Speicherfehler");
+        } catch (e) {
+            console.log("Cloud Push Fehler");
         }
         isSaving = false;
     }
@@ -434,6 +454,7 @@
 
     function renderTeam() {
         let container = document.getElementById('team-roster'); 
+        if(!container) return;
         container.innerHTML = "";
         
         roleOrder.forEach(role => {
@@ -476,7 +497,7 @@
         document.getElementById('count-einreisen').value = stats[name].einreisen || 0;
         document.getElementById('count-ausreisen').value = stats[name].ausreisen || 0; 
         document.getElementById('count-banne').value = stats[name].banne || 0;
-        document.getElementById('edit-role').value = stats[name].role; 
+        document.getElementById('edit-role').value = stats[name].role || "Supporter"; 
         document.getElementById('modal-text-log').value = ""; 
         document.getElementById('memberModal').style.display = 'flex';
     }
@@ -493,7 +514,7 @@
         
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} ${val > 0 ? '+' + val : val}`, statType);
         renderTeam(); calculateAiUpranks();
-        await saveGlobalCloudData();
+        await pushToCloud();
     }
 
     async function updateStatFromInput(statType) {
@@ -504,7 +525,7 @@
         stats[currentSelectedMember][statType] = inputVal;
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} gesetzt auf ${inputVal}`, statType);
         renderTeam(); calculateAiUpranks();
-        await saveGlobalCloudData();
+        await pushToCloud();
     }
 
     async function changeMemberRole() {
@@ -519,7 +540,7 @@
         
         addLogItem(`🔼 BEFÖRDERUNG: ${currentSelectedMember} von ${oldRole} zu ${newRole}`, 'uprank');
         renderTeam(); calculateAiUpranks();
-        await saveGlobalCloudData();
+        await pushToCloud();
     }
 
     async function saveTextLog() {
@@ -528,7 +549,7 @@
         addLogItem(`📝 NOTIZ für ${currentSelectedMember}: ${txt}`, 'einreisen');
         document.getElementById('modal-text-log').value = ""; 
         calculateAiUpranks();
-        await saveGlobalCloudData();
+        await pushToCloud();
     }
 
     async function deleteMember() {
@@ -538,7 +559,7 @@
         delete stats[currentSelectedMember]; 
         addLogItem(`❌ TEAM-KICK: ${currentSelectedMember} wurde entfernt.`, 'kick');
         closeModal(); renderTeam(); calculateAiUpranks();
-        await saveGlobalCloudData();
+        await pushToCloud();
     }
 
     async function addMember() {
@@ -551,19 +572,20 @@
         addLogItem(`📥 NEUES MITGLIED: ${name} als ${role} beigetreten.`, 'uprank');
         closeAddModal(); document.getElementById('add-name').value = ""; 
         renderTeam(); calculateAiUpranks();
-        await saveGlobalCloudData();
+        await pushToCloud();
     }
 
     function addLogItem(message, category) {
         let now = new Date().toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
         textLogs.unshift({time: now, msg: message, id: Date.now(), cat: category});
+        saveLocally();
         renderLogs();
     }
 
     async function removeLog(id) {
         textLogs = textLogs.filter(l => l.id !== id);
         renderLogs();
-        await saveGlobalCloudData();
+        await pushToCloud();
     }
 
     function renderLogs() {
@@ -591,6 +613,7 @@
 
     function calculateAiUpranks() {
         let aiDiv = document.getElementById('ai-suggestions'); 
+        if(!aiDiv) return;
         let suggestions = [];
         for (let name in stats) {
             let user = stats[name]; 
@@ -611,7 +634,6 @@
     }
 
     document.body.style.display = 'block';
-    initStats(); renderTeam(); renderLogs(); calculateAiUpranks();
 </script>
 </body>
 </html>

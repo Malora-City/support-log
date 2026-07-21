@@ -321,7 +321,7 @@
         onValue 
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    // DEINE FIREBASE KONFIGURATION
+    // FIREBASE KONFIGURATION
     const firebaseConfig = {
         apiKey: "AIzaSyAD4y-9XFJeQV1PX1WRARszXXM2LjClG3c",
         authDomain: "maloracity.firebaseapp.com",
@@ -450,7 +450,7 @@
     function connectFirebaseRealtime() {
         const dbRef = ref(db, 'maloracity_data');
         
-        // Empfange alle Änderungen sofort in Echtzeit
+        // Empfange alle Änderungen der Teamübersicht und Stats live aus Firebase
         onValue(dbRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -458,17 +458,22 @@
                 stats = data.stats || {};
                 textLogs = data.textLogs || [];
             } else {
-                // Wenn DB noch leer ist, mit Standard-Daten füllen
+                // Wenn DB noch leer ist, Standard-Daten schreiben
                 teamData = defaultTeamData;
+                stats = {};
+                textLogs = [];
                 initStats();
                 pushToFirebase();
+                return;
             }
+            initStats();
             renderTeam();
             renderLogs();
             calculateAiUpranks();
         });
     }
 
+    // Schreibt den kompletten aktuellen Status direkt in Firebase
     function pushToFirebase() {
         set(ref(db, 'maloracity_data'), {
             teamData: teamData,
@@ -498,7 +503,11 @@
     function initStats() { 
         for (let role in teamData) { 
             teamData[role].forEach(name => { 
-                if (!stats[name]) stats[name] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: role }; 
+                if (!stats[name]) {
+                    stats[name] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: role }; 
+                } else {
+                    stats[name].role = role;
+                }
             }); 
         } 
     }
@@ -542,13 +551,13 @@
     function openModal(name) {
         currentSelectedMember = name; 
         document.getElementById('modalMemberName').innerText = name;
-        document.getElementById('count-tickets').value = stats[name].tickets || 0; 
-        document.getElementById('count-supports').value = stats[name].supports || 0;
-        document.getElementById('count-feedbacks').value = stats[name].feedbacks || 0; 
-        document.getElementById('count-einreisen').value = stats[name].einreisen || 0;
-        document.getElementById('count-ausreisen').value = stats[name].ausreisen || 0; 
-        document.getElementById('count-banne').value = stats[name].banne || 0;
-        document.getElementById('edit-role').value = stats[name].role || "Supporter"; 
+        document.getElementById('count-tickets').value = (stats[name] && stats[name].tickets) ? stats[name].tickets : 0; 
+        document.getElementById('count-supports').value = (stats[name] && stats[name].supports) ? stats[name].supports : 0;
+        document.getElementById('count-feedbacks').value = (stats[name] && stats[name].feedbacks) ? stats[name].feedbacks : 0; 
+        document.getElementById('count-einreisen').value = (stats[name] && stats[name].einreisen) ? stats[name].einreisen : 0;
+        document.getElementById('count-ausreisen').value = (stats[name] && stats[name].ausreisen) ? stats[name].ausreisen : 0; 
+        document.getElementById('count-banne').value = (stats[name] && stats[name].banne) ? stats[name].banne : 0;
+        document.getElementById('edit-role').value = (stats[name] && stats[name].role) ? stats[name].role : "Supporter"; 
         document.getElementById('modal-text-log').value = ""; 
         document.getElementById('memberModal').style.display = 'flex';
     }
@@ -559,12 +568,14 @@
 
     function adjustStat(statType, val) {
         if (!currentSelectedMember) return;
+        if (!stats[currentSelectedMember]) {
+            stats[currentSelectedMember] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: 'Supporter' };
+        }
         if (!stats[currentSelectedMember][statType]) stats[currentSelectedMember][statType] = 0;
         stats[currentSelectedMember][statType] = Math.max(0, stats[currentSelectedMember][statType] + val);
         document.getElementById(`count-${statType}`).value = stats[currentSelectedMember][statType];
         
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} ${val > 0 ? '+' + val : val}`, statType);
-        renderTeam(); calculateAiUpranks();
         pushToFirebase();
     }
 
@@ -573,24 +584,29 @@
         let inputVal = parseInt(document.getElementById(`count-${statType}`).value);
         if (isNaN(inputVal) || inputVal < 0) inputVal = 0;
         
+        if (!stats[currentSelectedMember]) {
+            stats[currentSelectedMember] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: 'Supporter' };
+        }
         stats[currentSelectedMember][statType] = inputVal;
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} gesetzt auf ${inputVal}`, statType);
-        renderTeam(); calculateAiUpranks();
         pushToFirebase();
     }
 
     function changeMemberRole() {
         let newRole = document.getElementById('edit-role').value; 
-        let oldRole = stats[currentSelectedMember].role;
+        let oldRole = stats[currentSelectedMember] ? stats[currentSelectedMember].role : "Supporter";
         if(oldRole === newRole) return;
         
-        teamData[oldRole] = teamData[oldRole].filter(n => n !== currentSelectedMember);
+        if (teamData[oldRole]) {
+            teamData[oldRole] = teamData[oldRole].filter(n => n !== currentSelectedMember);
+        }
         if (!teamData[newRole]) teamData[newRole] = []; 
         teamData[newRole].push(currentSelectedMember);
-        stats[currentSelectedMember].role = newRole;
+        if (stats[currentSelectedMember]) {
+            stats[currentSelectedMember].role = newRole;
+        }
         
         addLogItem(`🔼 BEFÖRDERUNG: ${currentSelectedMember} von ${oldRole} zu ${newRole}`, 'uprank');
-        renderTeam(); calculateAiUpranks();
         pushToFirebase();
     }
 
@@ -599,42 +615,53 @@
         if(!txt.trim()) return;
         addLogItem(`📝 NOTIZ für ${currentSelectedMember}: ${txt}`, 'einreisen');
         document.getElementById('modal-text-log').value = ""; 
-        calculateAiUpranks();
         pushToFirebase();
     }
 
     function deleteMember() {
         if(!confirm(`Möchtest du ${currentSelectedMember} wirklich löschen?`)) return;
-        let role = stats[currentSelectedMember].role; 
-        teamData[role] = teamData[role].filter(n => n !== currentSelectedMember);
+        let role = stats[currentSelectedMember] ? stats[currentSelectedMember].role : ""; 
+        if (role && teamData[role]) {
+            teamData[role] = teamData[role].filter(n => n !== currentSelectedMember);
+        } else {
+            for (let r in teamData) {
+                teamData[r] = teamData[r].filter(n => n !== currentSelectedMember);
+            }
+        }
         delete stats[currentSelectedMember]; 
         addLogItem(`❌ TEAM-KICK: ${currentSelectedMember} wurde entfernt.`, 'kick');
-        closeModal(); renderTeam(); calculateAiUpranks();
+        closeModal(); 
         pushToFirebase();
     }
 
+    // Direktes Schreiben des neuen Mitglieds in Firebase
     function addMember() {
         let name = document.getElementById('add-name').value.trim(); 
         let role = document.getElementById('add-role').value;
         if(!name) return alert("Bitte Namen eingeben!");
+
         if(!teamData[role]) teamData[role] = []; 
-        teamData[role].push(name);
+        if(!teamData[role].includes(name)) {
+            teamData[role].push(name);
+        }
+        
         stats[name] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: role };
         addLogItem(`📥 NEUES MITGLIED: ${name} als ${role} beigetreten.`, 'uprank');
-        closeAddModal(); document.getElementById('add-name').value = ""; 
-        renderTeam(); calculateAiUpranks();
+        
+        closeAddModal(); 
+        document.getElementById('add-name').value = ""; 
+        
+        // Speichert das neue Mitglied direkt in der Firebase Realtime DB
         pushToFirebase();
     }
 
     function addLogItem(message, category) {
         let now = new Date().toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
         textLogs.unshift({time: now, msg: message, id: Date.now(), cat: category});
-        renderLogs();
     }
 
     function removeLog(id) {
         textLogs = textLogs.filter(l => l.id !== id);
-        renderLogs();
         pushToFirebase();
     }
 
@@ -683,7 +710,7 @@
         }
     }
 
-    // NORMALE ENTWICKLER-FUNKTIONEN IN GLOBALEN SCOPE EXPORTIEREN (FÜR ONCLICK EVENT HANDLER)
+    // EXPORT ZUR BEDIENUNG IM DOM (ONCLICK-EVENTS)
     window.handleLogin = handleLogin;
     window.handleRegister = handleRegister;
     window.handleLogout = handleLogout;

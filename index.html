@@ -9,6 +9,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Marked.js for Markdown Support -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Main Application Entry Module -->
+    <script type="module" src="js/app.js"></script>
 </head>
 <body>
 
@@ -19,44 +21,94 @@
         <h2>Leitungs Login</h2>
         <input type="email" id="login-email" placeholder="E-Mail Adresse">
         <input type="password" id="login-password" placeholder="Passwort">
-        <div style="display: flex; gap: 8px;">
+        <div class="login-buttons">
             <button class="action-btn" onclick="handleLogin()">Einloggen</button>
-            <button class="action-btn" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: none;" onclick="handleRegister()">Registrieren</button>
+            <button class="action-btn register-btn" onclick="handleRegister()">Registrieren</button>
         </div>
         <div id="login-error" style="color: var(--danger); margin-top: 10px; display: none; font-weight: bold; font-size: 0.85rem; word-break: break-word;"></div>
+    </div>
+</div>
+
+<!-- PENDING / FREIGABE WARTEN SCREEN -->
+<div id="pending-screen" style="display: none;">
+    <div class="login-box">
+        <div class="logo-css">M</div>
+        <h2>Zugriff ausstehend</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.6;">
+            Ihr Account (<strong id="pending-user-email" style="color: #fff;">...</strong>) wurde erfolgreich registriert.  
+            Er muss von dem Root-Administrator freigeschaltet werden, bevor Sie das Dashboard nutzen können.
+        </p>
+        <button class="action-btn cancel-modal-btn" onclick="handleLogout()">🚪 Abmelden / Zurück</button>
+    </div>
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen" style="display: none;">
+    <div class="login-box">
+        <div class="logo-css">M</div>
+        <h2>Lade Zentrale...</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 10px;">Verbindung zur Live-Zentrale wird hergestellt.</p>
     </div>
 </div>
 
 <!-- INTERFACE -->
 <div class="container" id="main-interface" style="display: none;">
     <div class="header-top-bar">
-        <span style="font-size: 0.85rem; color: var(--text-muted);">Eingeloggt als: <strong id="user-display-email" style="color: #fff;">...</strong> <span id="sync-indicator" style="color: var(--success); margin-left: 8px;">● Firebase Realtime Verbunden</span></span>
+        <span class="user-info-text">
+            Eingeloggt als: <strong id="user-display-email">...</strong> 
+            <span id="sync-indicator">● Firebase Realtime Verbinden...</span>
+        </span>
         <button class="logout-btn" onclick="handleLogout()">🚪 Abmelden</button>
     </div>
 
+    <!-- ROOT APPROVAL BANNER (Visible only to Root Admin if pending users exist) -->
+    <div id="root-approval-banner" style="display: none;"></div>
+
+    <!-- MAIN TABS NAVIGATION -->
     <div class="main-nav">
-        <div class="nav-tab active-tab" onclick="switchPage('dashboard')"><i data-lucide="layout-dashboard" style="display: inline-block; vertical-align: middle; margin-right: 6px; width: 18px; height: 18px;"></i> Live Dashboard</div>
-        <div class="nav-tab" onclick="switchPage('pinnwand')"><i data-lucide="clipboard-list" style="display: inline-block; vertical-align: middle; margin-right: 6px; width: 18px; height: 18px;"></i> Live Pinnwand & Dokumente</div>
-        <div class="nav-tab" onclick="switchPage('archiv')"><i data-lucide="archive" style="display: inline-block; vertical-align: middle; margin-right: 6px; width: 18px; height: 18px;"></i> Log-Archiv</div>
+        <div class="nav-tab active-tab" data-page="dashboard" onclick="switchPage('dashboard')">
+            <i data-lucide="layout-dashboard" class="nav-icon"></i> Live Dashboard
+        </div>
+        <div class="nav-tab" data-page="pinnwand" onclick="switchPage('pinnwand')">
+            <i data-lucide="clipboard-list" class="nav-icon"></i> Live Pinnwand
+        </div>
+        <div class="nav-tab" data-page="archiv" onclick="switchPage('archiv')">
+            <i data-lucide="archive" class="nav-icon"></i> Log-Archiv
+        </div>
+        <div class="nav-tab" data-page="settings" onclick="switchPage('settings')">
+            <i data-lucide="settings" class="nav-icon"></i> Einstellungen
+        </div>
     </div>
 
     <!-- SEITE 1: DASHBOARD -->
     <div id="page-dashboard" class="page-content active-page">
         <header>
-            <div class="logo-css" style="width: 70px; height: 70px; font-size: 2.2rem; border-radius: var(--radius-md);">M</div>
+            <div class="logo-css logo-header">M</div>
             <h1>Support & Einreise - Live Zentrale</h1>
         </header>
         <div class="main-layout">
             <div class="column-left">
                 <div class="card">
-                    <h2><i data-lucide="users" style="color: var(--primary); width: 20px; height: 20px; vertical-align: middle; margin-right: 6px;"></i> Team-Übersicht</h2>
-                    <button class="action-btn" style="margin-bottom: 15px; background: var(--primary-gradient); color: #fff; box-shadow: 0 4px 15px var(--primary-glow);" onclick="openAddMemberModal()">＋ Neues Teammitglied hinzufügen</button>
+                    <h2><i data-lucide="users" class="card-icon"></i> Team-Übersicht</h2>
+                    
+                    <!-- Controls and Search -->
+                    <div class="dashboard-controls-row">
+                        <button class="action-btn add-btn" onclick="openAddMemberModal()">＋ Teammitglied hinzufügen</button>
+                        <button class="action-btn export-btn" onclick="exportStatsToCSV()"><i data-lucide="download" class="inline-icon"></i> CSV Export</button>
+                    </div>
+                    
+                    <div class="search-bar-container">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="roster-search" placeholder="Mitglieder nach Name oder Rolle filtern...">
+                    </div>
+                    
                     <div id="team-roster"></div>
                 </div>
             </div>
+            
             <div class="column-right">
-                <div class="card" style="border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.025);">
-                    <h2><i data-lucide="sparkles" style="color: #10b981; width: 20px; height: 20px; vertical-align: middle; margin-right: 6px;"></i> Uprank AI Assistent</h2>
+                <div class="card ai-card">
+                    <h2><i data-lucide="sparkles" class="card-icon ai-icon"></i> Uprank AI Assistent</h2>
                     <div id="ai-suggestions">
                         <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 10px;">Vergib Punkte für KI-Tipps.</div>
                     </div>
@@ -68,12 +120,12 @@
     <!-- SEITE 2: LIVE-DOKUMENTE -->
     <div id="page-pinnwand" class="page-content">
         <header>
-            <div class="logo-css" style="width: 70px; height: 70px; font-size: 2.2rem; border-radius: var(--radius-md);">M</div>
+            <div class="logo-css logo-header">M</div>
             <h1>Teamleitung Live-Dokumente</h1>
         </header>
         
         <div class="card" style="border: 1px solid var(--primary);">
-            <h2><i data-lucide="file-text" style="color: var(--primary); width: 20px; height: 20px; vertical-align: middle; margin-right: 6px;"></i> LIVE-DOKUMENTE (TB-VORBEREITUNG)</h2>
+            <h2><i data-lucide="file-text" class="card-icon"></i> LIVE-DOKUMENTE (TB-VORBEREITUNG)</h2>
             <div class="tb-editor-container">
                 <div class="tb-editor-tabs">
                     <button class="tb-tab active" onclick="switchTbTab('edit')">✏️ Bearbeiten</button>
@@ -94,23 +146,23 @@
     <!-- SEITE 3: LOG ARCHIV -->
     <div id="page-archiv" class="page-content">
         <header>
-            <div class="logo-css" style="width: 70px; height: 70px; font-size: 2.2rem; border-radius: var(--radius-md);">M</div>
+            <div class="logo-css logo-header">M</div>
             <h1>Management Log-Archiv</h1>
         </header>
         <div class="card">
-            <h2><i data-lucide="folder-search" style="color: var(--primary); width: 20px; height: 20px; vertical-align: middle; margin-right: 6px;"></i> Unified Log-Archiv Explorer</h2>
+            <h2><i data-lucide="folder-search" class="card-icon"></i> Unified Log-Archiv Explorer</h2>
             <div class="log-dashboard">
                 <!-- Quick Filters -->
                 <div class="log-filters" id="log-filters">
                     <button class="filter-btn active-filter" onclick="filterLogs('all', event)">Alle Einträge</button>
-                    <button class="filter-btn" onclick="filterLogs('tickets', event)" style="border-bottom: 2px solid #60a5fa;">🎫 Tickets-Log</button>
-                    <button class="filter-btn" onclick="filterLogs('supports', event)" style="border-bottom: 2px solid #38bdf8;">🛠️ Support-Log</button>
-                    <button class="filter-btn" onclick="filterLogs('feedbacks', event)" style="border-bottom: 2px solid #a78bfa;">⭐ Feedback-Log</button>
-                    <button class="filter-btn" onclick="filterLogs('einreisen', event)" style="border-bottom: 2px solid #34d399;">🛃 Einreisen-Log</button>
-                    <button class="filter-btn" onclick="filterLogs('ausreisen', event)" style="border-bottom: 2px solid #fb923c;">🛬 Ausreise-Log</button>
-                    <button class="filter-btn" onclick="filterLogs('banne', event)" style="border-bottom: 2px solid #f87171;">🚫 Banned-Log</button>
-                    <button class="filter-btn" onclick="filterLogs('uprank', event)" style="border-bottom: 2px solid #fbbf24;">🔼 Beförderungen (Uprank)</button>
-                    <button class="filter-btn" onclick="filterLogs('kick', event)" style="border-bottom: 2px solid #ef4444;">❌ Kicks & Ausreise</button>
+                    <button class="filter-btn" onclick="filterLogs('tickets', event)" style="border-bottom: 2px solid #60a5fa;">🎫 Tickets</button>
+                    <button class="filter-btn" onclick="filterLogs('supports', event)" style="border-bottom: 2px solid #38bdf8;">🛠️ Supports</button>
+                    <button class="filter-btn" onclick="filterLogs('feedbacks', event)" style="border-bottom: 2px solid #a78bfa;">⭐ Feedbacks</button>
+                    <button class="filter-btn" onclick="filterLogs('einreisen', event)" style="border-bottom: 2px solid #34d399;">🛃 Einreisen</button>
+                    <button class="filter-btn" onclick="filterLogs('ausreisen', event)" style="border-bottom: 2px solid #fb923c;">🛬 Ausreisen</button>
+                    <button class="filter-btn" onclick="filterLogs('banne', event)" style="border-bottom: 2px solid #f87171;">🚫 Banne</button>
+                    <button class="filter-btn" onclick="filterLogs('uprank', event)" style="border-bottom: 2px solid #fbbf24;">🔼 Upranks</button>
+                    <button class="filter-btn" onclick="filterLogs('kick', event)" style="border-bottom: 2px solid #ef4444;">❌ Kicks</button>
                 </div>
                 
                 <!-- Search and Stats -->
@@ -123,9 +175,49 @@
             </div>
         </div>
     </div>
+
+    <!-- SEITE 4: SYSTEM-EINSTELLUNGEN -->
+    <div id="page-settings" class="page-content">
+        <header>
+            <div class="logo-css logo-header">M</div>
+            <h1>System-Einstellungen</h1>
+        </header>
+        <div class="card">
+            <h2><i data-lucide="settings" class="card-icon"></i> KI-Gewichtung & Beförderungsschwellen</h2>
+            
+            <div class="settings-container">
+                <div class="settings-info-alert">
+                    <strong>Hinweis:</strong> Diese Einstellungen werden live in Firebase synchronisiert und gelten für alle Teamleiter in Echtzeit.
+                </div>
+
+                <div class="settings-sections-flex">
+                    <div class="settings-section-card">
+                        <h3>1. Punkte-Gewichtung per Aktion</h3>
+                        <p class="settings-desc">Definiere, wie viele Punkte ein Mitglied für die Erledigung einzelner Aktivitäten erhält.</p>
+                        <div class="settings-grid" id="settings-weights-grid">
+                            <!-- Loaded dynamically from ui.js -->
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section-card">
+                        <h3>2. Beförderungsschwellen pro Rolle</h3>
+                        <p class="settings-desc">Benötigte Punkte, ab denen ein Mitglied im AI-Assistenten für die nächste Rolle vorgeschlagen wird.</p>
+                        <div class="settings-grid" id="settings-thresholds-grid">
+                            <!-- Loaded dynamically from ui.js -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-actions">
+                    <button class="action-btn save-settings-btn" onclick="saveSettings()">Einstellungen speichern</button>
+                    <button class="action-btn cancel-settings-btn" onclick="switchPage('dashboard')">Abbrechen</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- POPUP MODAL -->
+<!-- POPUP MODAL (EDIT PROFILE/STATS) -->
 <div id="memberModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -133,68 +225,70 @@
             <span class="close-btn" onclick="closeModal()">&times;</span>
         </div>
 
-        <div class="counter-group">
-            <span>Tickets</span>
-            <div class="counter-controls">
-                <button class="counter-btn" onclick="adjustStat('tickets', -1)">-</button>
-                <input type="number" class="counter-input" id="count-tickets" value="0" min="0" oninput="updateStatFromInput('tickets')">
-                <button class="counter-btn" onclick="adjustStat('tickets', 1)">+</button>
+        <div class="stats-editors-grid">
+            <div class="counter-group">
+                <span>Tickets</span>
+                <div class="counter-controls">
+                    <button class="counter-btn" onclick="adjustStat('tickets', -1)">-</button>
+                    <input type="number" class="counter-input" id="count-tickets" value="0" min="0" oninput="updateStatFromInput('tickets')">
+                    <button class="counter-btn" onclick="adjustStat('tickets', 1)">+</button>
+                </div>
+            </div>
+
+            <div class="counter-group">
+                <span>Supports</span>
+                <div class="counter-controls">
+                    <button class="counter-btn" onclick="adjustStat('supports', -1)">-</button>
+                    <input type="number" class="counter-input" id="count-supports" value="0" min="0" oninput="updateStatFromInput('supports')">
+                    <button class="counter-btn" onclick="adjustStat('supports', 1)">+</button>
+                </div>
+            </div>
+
+            <div class="counter-group">
+                <span>Feedbacks</span>
+                <div class="counter-controls">
+                    <button class="counter-btn" onclick="adjustStat('feedbacks', -1)">-</button>
+                    <input type="number" class="counter-input" id="count-feedbacks" value="0" min="0" oninput="updateStatFromInput('feedbacks')">
+                    <button class="counter-btn" onclick="adjustStat('feedbacks', 1)">+</button>
+                </div>
+            </div>
+
+            <div class="counter-group">
+                <span>Einreisen</span>
+                <div class="counter-controls">
+                    <button class="counter-btn" onclick="adjustStat('einreisen', -1)">-</button>
+                    <input type="number" class="counter-input" id="count-einreisen" value="0" min="0" oninput="updateStatFromInput('einreisen')">
+                    <button class="counter-btn" onclick="adjustStat('einreisen', 1)">+</button>
+                </div>
+            </div>
+
+            <div class="counter-group">
+                <span>Ausreise</span>
+                <div class="counter-controls">
+                    <button class="counter-btn" onclick="adjustStat('ausreisen', -1)">-</button>
+                    <input type="number" class="counter-input" id="count-ausreisen" value="0" min="0" oninput="updateStatFromInput('ausreisen')">
+                    <button class="counter-btn" onclick="adjustStat('ausreisen', 1)">+</button>
+                </div>
+            </div>
+
+            <div class="counter-group">
+                <span>Banned</span>
+                <div class="counter-controls">
+                    <button class="counter-btn" onclick="adjustStat('banne', -1)">-</button>
+                    <input type="number" class="counter-input" id="count-banne" value="0" min="0" oninput="updateStatFromInput('banne')">
+                    <button class="counter-btn" onclick="adjustStat('banne', 1)">+</button>
+                </div>
             </div>
         </div>
 
-        <div class="counter-group">
-            <span>Supports</span>
-            <div class="counter-controls">
-                <button class="counter-btn" onclick="adjustStat('supports', -1)">-</button>
-                <input type="number" class="counter-input" id="count-supports" value="0" min="0" oninput="updateStatFromInput('supports')">
-                <button class="counter-btn" onclick="adjustStat('supports', 1)">+</button>
-            </div>
-        </div>
-
-        <div class="counter-group">
-            <span>Feedbacks</span>
-            <div class="counter-controls">
-                <button class="counter-btn" onclick="adjustStat('feedbacks', -1)">-</button>
-                <input type="number" class="counter-input" id="count-feedbacks" value="0" min="0" oninput="updateStatFromInput('feedbacks')">
-                <button class="counter-btn" onclick="adjustStat('feedbacks', 1)">+</button>
-            </div>
-        </div>
-
-        <div class="counter-group">
-            <span>Einreisen</span>
-            <div class="counter-controls">
-                <button class="counter-btn" onclick="adjustStat('einreisen', -1)">-</button>
-                <input type="number" class="counter-input" id="count-einreisen" value="0" min="0" oninput="updateStatFromInput('einreisen')">
-                <button class="counter-btn" onclick="adjustStat('einreisen', 1)">+</button>
-            </div>
-        </div>
-
-        <div class="counter-group">
-            <span>Ausreise</span>
-            <div class="counter-controls">
-                <button class="counter-btn" onclick="adjustStat('ausreisen', -1)">-</button>
-                <input type="number" class="counter-input" id="count-ausreisen" value="0" min="0" oninput="updateStatFromInput('ausreisen')">
-                <button class="counter-btn" onclick="adjustStat('ausreisen', 1)">+</button>
-            </div>
-        </div>
-
-        <div class="counter-group">
-            <span>Banned</span>
-            <div class="counter-controls">
-                <button class="counter-btn" onclick="adjustStat('banne', -1)">-</button>
-                <input type="number" class="counter-input" id="count-banne" value="0" min="0" oninput="updateStatFromInput('banne')">
-                <button class="counter-btn" onclick="adjustStat('banne', 1)">+</button>
-            </div>
-        </div>
-
-        <hr style="border-color:var(--border); margin: 12px 0;">
-        <label style="font-size: 0.85rem; color: #a0aec0;">Rolle ändern:</label>
+        <div class="modal-divider"></div>
+        <label class="modal-section-label">Rolle ändern:</label>
         <select id="edit-role" onchange="changeMemberRole()"></select>
 
         <textarea id="modal-text-log" placeholder="Zusätzliche Notiz ins Archiv schreiben..."></textarea>
-        <button class="action-btn" onclick="saveTextLog()">Notiz hinzufügen</button>
+        <button class="action-btn save-note-btn" onclick="saveTextLog()">Notiz hinzufügen</button>
         <button class="action-btn delete-btn" onclick="deleteMember()">Aus Team entfernen</button>
-        <button class="action-btn" style="background:#4a5568; margin-top:5px;" onclick="closeModal()">Abbrechen</button>
+        <button class="action-btn cancel-modal-btn" onclick="closeModal()">Abbrechen</button>
     </div>
 </div>
 
@@ -206,593 +300,12 @@
             <span class="close-btn" onclick="closeAddModal()">&times;</span>
         </div>
         <input type="text" id="add-name" placeholder="z.B. @MC | Name">
+        <label class="modal-section-label">Start-Rolle:</label>
         <select id="add-role"></select>
         <button class="action-btn" onclick="addMember()">Hinzufügen</button>
-        <button class="action-btn" style="background:#4a5568;" onclick="closeAddModal()">Abbrechen</button>
+        <button class="action-btn cancel-modal-btn" onclick="closeAddModal()">Abbrechen</button>
     </div>
 </div>
 
-<!-- FIREBASE SDK INTEGRATION -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { 
-        getAuth, 
-        signInWithEmailAndPassword, 
-        createUserWithEmailAndPassword, 
-        signOut, 
-        onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { 
-        getDatabase, 
-        ref, 
-        set, 
-        onValue 
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-    // FIREBASE CONFIG
-    const firebaseConfig = {
-        apiKey: "AIzaSyAD4y-9XFJeQV1PX1WRARszXXM2LjClG3c",
-        authDomain: "maloracity.firebaseapp.com",
-        databaseURL: "https://maloracity-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "maloracity",
-        storageBucket: "maloracity.firebasestorage.app",
-        messagingSenderId: "1023780794036",
-        appId: "1:1023780794036:web:08df9ae7ade87df53cb1e1"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-
-    const roleOrder = [
-        "Projektleitung", "Stv. Projektleitung", "Teamleitung", "Stv. Teamleitung", 
-        "Fraktionsverwaltungleitung", "Fraktionsverwaltung", "Head Developer", "Developer", 
-        "Jr. Developer", "Head Analyst", "Analyst", "Probe Analyst", "Head Administrator", 
-        "Sr. Administrator", "Administrator", "Test-Administrator", "Head Moderator", 
-        "Sr. Moderator", "Moderator", "Test - Moderator", "Head Supporter", "Sr. Supporter", 
-        "Supporter", "Test Supporter", "Einreisebeamter"
-    ];
-
-    // Rollen-Dropdowns dynamisch befüllen
-    const addRoleSelect = document.getElementById('add-role');
-    const editRoleSelect = document.getElementById('edit-role');
-    if (addRoleSelect && editRoleSelect) {
-        roleOrder.forEach(role => {
-            const opt1 = document.createElement('option');
-            opt1.value = role;
-            opt1.textContent = role;
-            addRoleSelect.appendChild(opt1);
-
-            const opt2 = document.createElement('option');
-            opt2.value = role;
-            opt2.textContent = role;
-            editRoleSelect.appendChild(opt2);
-        });
-    }
-
-    let currentSelectedMember = "";
-
-    let defaultTeamData = {
-        "Projektleitung": ["@MC | Lyrox™"], "Stv. Projektleitung": ["@MC | DonXVitoo™", "@MC | Tobi👀"], 
-        "Teamleitung": ["@MC | Paul", "@MC | ZmtxTV 👀"], "Stv. Teamleitung": ["@MC | CityNeko 👀"], 
-        "Fraktionsverwaltungleitung": ["@MC | Jaden", "@MC | John"], "Fraktionsverwaltung": [], 
-        "Head Developer": ["@MC | Knoppers.exe"], "Developer": [], "Jr. Developer": ["@OnlyError"], 
-        "Head Analyst": ["@MC | Hassan", "<@727523575950606396>", "@MC | Ling.js", "@MC | Turbo.dll"], 
-        "Analyst": ["<@562260580988092475>", "<@772069989582110732>", "@MC | Lias", "@MC | Ling.js", "<@148278991352164494>"], 
-        "Probe Analyst": [], "Head Administrator": ["@MC | Pauli™"], "Sr. Administrator": ["@MC | Patrick 👀"], 
-        "Administrator": ["@MC | HIRA", "@MC | Lenny"], "Test-Administrator": ["@MC I Eliasdwd"], 
-        "Head Moderator": ["@MC | Matti"], "Sr. Moderator": [], 
-        "Moderator": ["@MC | ★ R Y Z E ★", "@MC | Exy.lua", "@MC | Knobi", "@MC | Līåm™", "@MC | Sidney"], 
-        "Test - Moderator": ["@MC | zonex", "@MC | Andre ✝"], "Head Supporter": [], 
-        "Sr. Supporter": ["@MC | Kellox"], 
-        "Supporter": ["@MC | Aspy", "@MC | IDropMyTable", "@MC | Jamal", "@MC | Klaisnax", "@MC | MD-01 Tim Dlnaro", "@MC | MD-02 368kk", "<@381082149803261954>", "@MC | Tristan Tiefprais", "@MC | Vito Nacé", "@MC I Jonas👀", "@MC I Louis", "@MC I Nick.exe"], 
-        "Test Supporter": ["<@1456434493236711499>", "@MC | Dave Shanke", "<@704072513617133638>", "<@1066692526158905346>", "<@1266035889209872489>", "@MC | Luca Abi", "@MC | Nick", "@MC | syzulex", "@MC l Jay"], 
-        "Einreisebeamter": ["@MC | ★ R Y Z E ★", "@MC | Aspy", "@MC | HIRA", "@MC | IDropMyTable", "@MC | Jamal", "@MC | Kellox", "@MC | MD-02 368kk", "@MC | syzulex", "@MC | Nick.exe"]
-    };
-
-    let teamData = defaultTeamData;
-    let stats = {};
-    let textLogs = [];
-
-    // --- HELFER: FIREBASE KEY ENCODING / DECODING ---
-    function encodeFirebaseData(obj) {
-        if (typeof obj !== 'object' || obj === null) return obj;
-        if (Array.isArray(obj)) return obj.map(encodeFirebaseData);
-        const res = {};
-        for (let key in obj) {
-            let safeKey = key.replace(/\./g, '___dot___')
-                             .replace(/\#/g, '___hash___')
-                             .replace(/\$/g, '___dollar___')
-                             .replace(/\[/g, '___lbracket___')
-                             .replace(/\]/g, '___rbracket___');
-            res[safeKey] = encodeFirebaseData(obj[key]);
-        }
-        return res;
-    }
-
-    function decodeFirebaseData(obj) {
-        if (typeof obj !== 'object' || obj === null) return obj;
-        if (Array.isArray(obj)) return obj.map(decodeFirebaseData);
-        const res = {};
-        for (let key in obj) {
-            let realKey = key.replace(/___dot___/g, '.')
-                              .replace(/___hash___/g, '#')
-                              .replace(/___dollar___/g, '$')
-                              .replace(/___lbracket___/g, '[')
-                              .replace(/___rbracket___/g, ']');
-            res[realKey] = decodeFirebaseData(obj[key]);
-        }
-        return res;
-    }
-
-    // --- AUTHENTIFICATION ---
-    async function handleLogin() {
-        const email = document.getElementById('login-email').value.trim();
-        const password = document.getElementById('login-password').value;
-        const errDiv = document.getElementById('login-error');
-        errDiv.style.display = 'none';
-
-        if(!email || !password) {
-            errDiv.innerText = "Bitte E-Mail und Passwort eingeben, Bro!";
-            errDiv.style.display = 'block';
-            return;
-        }
-
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-        } catch (error) {
-            errDiv.innerText = "Fehler beim Login: " + formatAuthError(error.code);
-            errDiv.style.display = 'block';
-        }
-    }
-
-    async function handleRegister() {
-        const email = document.getElementById('login-email').value.trim();
-        const password = document.getElementById('login-password').value;
-        const errDiv = document.getElementById('login-error');
-        errDiv.style.display = 'none';
-
-        if(!email || !password) {
-            errDiv.innerText = "Bitte E-Mail und Passwort eingeben, Bro!";
-            errDiv.style.display = 'block';
-            return;
-        }
-
-        try {
-            await createUserWithEmailAndPassword(auth, email, password);
-        } catch (error) {
-            errDiv.innerText = "Fehler bei Registrierung: " + formatAuthError(error.code);
-            errDiv.style.display = 'block';
-        }
-    }
-
-    async function handleLogout() {
-        await signOut(auth);
-    }
-
-    function formatAuthError(code) {
-        switch(code) {
-            case 'auth/invalid-email': return 'Ungültiges E-Mail Format.';
-            case 'auth/user-not-found': return 'Kein Account mit dieser E-Mail gefunden.';
-            case 'auth/wrong-password': return 'Falsches Passwort.';
-            case 'auth/email-already-in-use': return 'E-Mail wird bereits verwendet.';
-            case 'auth/weak-password': return 'Das Passwort muss mind. 6 Zeichen haben.';
-            case 'auth/invalid-credential': return 'Ungültige Anmeldedaten.';
-            default: return code;
-        }
-    }
-
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            document.getElementById('user-display-email').innerText = user.email;
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('main-interface').style.display = 'block';
-            document.body.style.display = 'block';
-            
-            connectFirebaseRealtime();
-        } else {
-            document.getElementById('main-interface').style.display = 'none';
-            document.getElementById('login-screen').style.display = 'flex';
-            document.body.style.display = 'block';
-        }
-    });
-
-    // --- REALTIME DATABASE SYNC ---
-    function connectFirebaseRealtime() {
-        const dbRef = ref(db, 'maloracity_data');
-        
-        onValue(dbRef, (snapshot) => {
-            const rawData = snapshot.val();
-            if (rawData) {
-                const data = decodeFirebaseData(rawData);
-                teamData = data.teamData || defaultTeamData;
-                stats = data.stats || {};
-                textLogs = data.textLogs || [];
-            } else {
-                teamData = defaultTeamData;
-                initStats();
-                pushToFirebase();
-            }
-            initStats();
-            renderTeam();
-            renderLogs();
-            calculateAiUpranks();
-        });
-
-        // Sync for collaborative Markdown Editor
-        const tbRef = ref(db, 'maloracity_data/tbDoc');
-        onValue(tbRef, (snapshot) => {
-            const val = snapshot.val();
-            const mdInput = document.getElementById('tb-markdown-input');
-            const mdPreview = document.getElementById('tb-markdown-preview');
-            
-            if (mdInput && document.activeElement !== mdInput) {
-                mdInput.value = val || "";
-            }
-            if (mdPreview) {
-                mdPreview.innerHTML = window.marked ? marked.parse(val || "") : (val || "");
-            }
-        });
-    }
-
-    function pushToFirebase() {
-        set(ref(db, 'maloracity_data'), encodeFirebaseData({
-            teamData: teamData,
-            stats: stats,
-            textLogs: textLogs
-        }));
-    }
-
-    // --- LOGIK ---
-    function switchPage(pageId) {
-        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active-tab'));
-        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active-page'));
-        
-        if (pageId === 'dashboard') { 
-            document.querySelectorAll('.nav-tab')[0].classList.add('active-tab'); 
-            document.getElementById('page-dashboard').classList.add('active-page'); 
-        } else if (pageId === 'pinnwand') { 
-            document.querySelectorAll('.nav-tab')[1].classList.add('active-tab'); 
-            document.getElementById('page-pinnwand').classList.add('active-page'); 
-        } else { 
-            document.querySelectorAll('.nav-tab')[2].classList.add('active-tab'); 
-            document.getElementById('page-archiv').classList.add('active-page'); 
-        }
-        if (window.lucide) {
-            lucide.createIcons();
-        }
-    }
-
-    function initStats() { 
-        for (let role in teamData) { 
-            teamData[role].forEach(name => { 
-                if (!stats[name]) {
-                    stats[name] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: role }; 
-                } else {
-                    stats[name].role = role;
-                }
-            }); 
-        } 
-    }
-
-    function renderTeam() {
-        let container = document.getElementById('team-roster'); 
-        if(!container) return;
-        container.innerHTML = "";
-        
-        roleOrder.forEach(role => {
-            if(!teamData[role]) teamData[role] = [];
-            
-            let section = document.createElement('div'); 
-            section.className = 'role-section';
-            
-            let title = document.createElement('div'); 
-            title.className = 'role-title'; 
-            title.innerText = `${role} (${teamData[role].length})`; 
-            section.appendChild(title);
-            
-            let grid = document.createElement('div'); 
-            grid.className = 'member-grid';
-            
-            if(teamData[role].length === 0) { 
-                grid.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem; font-style: italic; padding-left: 4px;">Keine Mitglieder</span>'; 
-            } else {
-                teamData[role].forEach(name => {
-                    let mStats = stats[name] || { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0 };
-                    let mCard = document.createElement('div'); 
-                    mCard.className = 'member-card'; 
-                    mCard.onclick = () => openModal(name);
-                    mCard.innerHTML = `<div class="member-name">${name}</div><div class="member-stats-preview">🎫 T:${mStats.tickets} | 🛠️ S:${mStats.supports} | ⭐ F:${mStats.feedbacks}<br>🛃 E:${mStats.einreisen} | 🛬 A:${mStats.ausreisen} | 🚫 B:${mStats.banne}</div>`;
-                    grid.appendChild(mCard);
-                });
-            }
-            section.appendChild(grid); 
-            container.appendChild(section);
-        });
-        if (window.lucide) {
-            lucide.createIcons();
-        }
-    }
-
-    function openModal(name) {
-        currentSelectedMember = name; 
-        document.getElementById('modalMemberName').innerText = name;
-        if(!stats[name]) initStats();
-        document.getElementById('count-tickets').value = stats[name].tickets || 0; 
-        document.getElementById('count-supports').value = stats[name].supports || 0;
-        document.getElementById('count-feedbacks').value = stats[name].feedbacks || 0; 
-        document.getElementById('count-einreisen').value = stats[name].einreisen || 0;
-        document.getElementById('count-ausreisen').value = stats[name].ausreisen || 0; 
-        document.getElementById('count-banne').value = stats[name].banne || 0;
-        document.getElementById('edit-role').value = stats[name].role || "Supporter"; 
-        document.getElementById('modal-text-log').value = ""; 
-        document.getElementById('memberModal').style.display = 'flex';
-    }
-
-    function closeModal() { document.getElementById('memberModal').style.display = 'none'; renderTeam(); }
-    function openAddMemberModal() { document.getElementById('addMemberModal').style.display = 'flex'; }
-    function closeAddModal() { document.getElementById('addMemberModal').style.display = 'none'; }
-
-    function adjustStat(statType, val) {
-        if (!currentSelectedMember) return;
-        if (!stats[currentSelectedMember][statType]) stats[currentSelectedMember][statType] = 0;
-        stats[currentSelectedMember][statType] = Math.max(0, stats[currentSelectedMember][statType] + val);
-        document.getElementById(`count-${statType}`).value = stats[currentSelectedMember][statType];
-        
-        addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} ${val > 0 ? '+' + val : val}`, statType);
-        renderTeam(); calculateAiUpranks();
-        pushToFirebase();
-    }
-
-    function updateStatFromInput(statType) {
-        if (!currentSelectedMember) return;
-        let inputVal = parseInt(document.getElementById(`count-${statType}`).value);
-        if (isNaN(inputVal) || inputVal < 0) inputVal = 0;
-        
-        stats[currentSelectedMember][statType] = inputVal;
-        addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} gesetzt auf ${inputVal}`, statType);
-        renderTeam(); calculateAiUpranks();
-        pushToFirebase();
-    }
-
-    function changeMemberRole() {
-        let newRole = document.getElementById('edit-role').value; 
-        let oldRole = stats[currentSelectedMember].role;
-        if(oldRole === newRole) return;
-        
-        teamData[oldRole] = teamData[oldRole].filter(n => n !== currentSelectedMember);
-        if (!teamData[newRole]) teamData[newRole] = []; 
-        teamData[newRole].push(currentSelectedMember);
-        stats[currentSelectedMember].role = newRole;
-        
-        addLogItem(`🔼 BEFÖRDERUNG: ${currentSelectedMember} von ${oldRole} zu ${newRole}`, 'uprank');
-        renderTeam(); calculateAiUpranks();
-        pushToFirebase();
-    }
-
-    function saveTextLog() {
-        let txt = document.getElementById('modal-text-log').value; 
-        if(!txt.trim()) return;
-        addLogItem(`📝 NOTIZ für ${currentSelectedMember}: ${txt}`, 'einreisen');
-        document.getElementById('modal-text-log').value = ""; 
-        calculateAiUpranks();
-        pushToFirebase();
-    }
-
-    function deleteMember() {
-        if(!confirm(`Möchtest du ${currentSelectedMember} wirklich löschen?`)) return;
-        let role = stats[currentSelectedMember].role; 
-        teamData[role] = teamData[role].filter(n => n !== currentSelectedMember);
-        delete stats[currentSelectedMember]; 
-        addLogItem(`❌ TEAM-KICK: ${currentSelectedMember} wurde entfernt.`, 'kick');
-        closeModal(); renderTeam(); calculateAiUpranks();
-        pushToFirebase();
-    }
-
-    function addMember() {
-        let name = document.getElementById('add-name').value.trim(); 
-        let role = document.getElementById('add-role').value;
-        if(!name) return alert("Bitte Namen eingeben!");
-        if(!teamData[role]) teamData[role] = []; 
-        teamData[role].push(name);
-        stats[name] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: role };
-        addLogItem(`📥 NEUES MITGLIED: ${name} als ${role} beigetreten.`, 'uprank');
-        closeAddModal(); document.getElementById('add-name').value = ""; 
-        renderTeam(); calculateAiUpranks();
-        pushToFirebase();
-    }
-
-    function addLogItem(message, category) {
-        let now = new Date().toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
-        textLogs.unshift({time: now, msg: message, id: Date.now(), cat: category});
-        renderLogs();
-    }
-
-    function removeLog(id) {
-        textLogs = textLogs.filter(l => l.id !== id);
-        renderLogs();
-        pushToFirebase();
-    }
-
-    let currentLogFilter = 'all';
-
-    function filterLogs(category, event) {
-        currentLogFilter = category;
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active-filter');
-        });
-        if (event && event.currentTarget) {
-            event.currentTarget.classList.add('active-filter');
-        }
-        renderLogs();
-    }
-
-    function renderLogs() {
-        const container = document.getElementById('unified-log-list');
-        if (!container) return;
-        container.innerHTML = "";
-        
-        const searchQuery = document.getElementById('log-search') ? document.getElementById('log-search').value.toLowerCase() : "";
-        let displayedCount = 0;
-
-        textLogs.forEach(l => {
-            // Category filter
-            if (currentLogFilter !== 'all' && l.cat !== currentLogFilter) return;
-            
-            // Search filter
-            if (searchQuery && !l.msg.toLowerCase().includes(searchQuery) && !l.time.toLowerCase().includes(searchQuery)) return;
-
-            displayedCount++;
-            const itemClass = `log-item cat-${l.cat}`;
-            
-            container.innerHTML += `
-                <div class="${itemClass}">
-                    <span><strong>[${l.time}]</strong> ${l.msg}</span>
-                    <span class="log-delete" onclick="removeLog(${l.id})">&times;</span>
-                </div>
-            `;
-        });
-
-        if (displayedCount === 0) {
-            container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.95rem; text-align: center; padding: 40px 0; font-style: italic;">Keine passenden Einträge im Archiv gefunden.</p>';
-        }
-    }
-
-    function calculateAiUpranks() {
-        let aiDiv = document.getElementById('ai-suggestions'); 
-        if(!aiDiv) return;
-        let suggestions = [];
-
-        const weights = {
-            tickets: 10,
-            supports: 15,
-            feedbacks: 25,
-            einreisen: 12,
-            ausreisen: 8,
-            banne: 5
-        };
-
-        const roleThresholds = {
-            "Einreisebeamter": 150,
-            "Test Supporter": 200,
-            "Supporter": 500,
-            "Sr. Supporter": 800,
-            "Test - Moderator": 300,
-            "Moderator": 600,
-            "Sr. Moderator": 1000,
-            "Test-Administrator": 450,
-            "Administrator": 900,
-            "Sr. Administrator": 1400,
-            "Probe Analyst": 250,
-            "Analyst": 600
-        };
-
-        for (let name in stats) {
-            let user = stats[name]; 
-            const role = user.role || "Supporter";
-
-            // Keine Uprank-Tipps für die oberste Führungsebene
-            if (role === "Projektleitung" || role === "Stv. Projektleitung" || role === "Teamleitung" || role === "Stv. Teamleitung") {
-                continue;
-            }
-
-            const threshold = roleThresholds[role] || 500;
-            const score = (user.tickets || 0) * weights.tickets +
-                          (user.supports || 0) * weights.supports +
-                          (user.feedbacks || 0) * weights.feedbacks +
-                          (user.einreisen || 0) * weights.einreisen +
-                          (user.ausreisen || 0) * weights.ausreisen +
-                          (user.banne || 0) * weights.banne;
-
-            if (score >= threshold) {
-                suggestions.push({ 
-                    name: name, 
-                    role: role, 
-                    score: score, 
-                    threshold: threshold,
-                    details: `🎫 ${user.tickets || 0} T | 🛠️ ${user.supports || 0} S | ⭐ ${user.feedbacks || 0} F | 🛃 ${user.einreisen || 0} E`
-                });
-            }
-        }
-
-        if(suggestions.length === 0) { 
-            aiDiv.innerHTML = `<div style="font-size:0.85rem; color:var(--text-muted); text-align:center; padding:15px; font-style: italic;">Derzeit keine Teammitglieder für eine Beförderung qualifiziert.</div>`; 
-        } else {
-            let html = ""; 
-            suggestions.forEach(s => { 
-                html += `
-                    <div class="ai-item">
-                        <div class="ai-header">🚀 Uprank Tipp: ${s.name}</div>
-                        <div style="font-size:0.8rem; font-weight: 600; color: #fff; margin-bottom: 2px;">Aktuelle Rolle: ${s.role}</div>
-                        <div style="font-size:0.8rem; font-weight: 600; color: #10b981; margin-bottom: 6px;">Punkte: ${s.score} / ${s.threshold} (Bereit!)</div>
-                        <div class="ai-reason">${s.details}</div>
-                    </div>
-                `; 
-            });
-            aiDiv.innerHTML = html;
-        }
-    }
-
-    // GLOBALE WINDOW EXPORTE
-    window.handleLogin = handleLogin;
-    window.handleRegister = handleRegister;
-    window.handleLogout = handleLogout;
-    window.switchPage = switchPage;
-    window.openModal = openModal;
-    window.closeModal = closeModal;
-    window.openAddMemberModal = openAddMemberModal;
-    window.closeAddModal = closeAddModal;
-    window.adjustStat = adjustStat;
-    window.updateStatFromInput = updateStatFromInput;
-    window.changeMemberRole = changeMemberRole;
-    window.saveTextLog = saveTextLog;
-    window.deleteMember = deleteMember;
-    window.addMember = addMember;
-    window.removeLog = removeLog;
-    window.filterLogs = filterLogs;
-    window.renderLogs = renderLogs;
-
-    let tbDebounceTimer;
-    function handleTbMarkdownInput() {
-        const text = document.getElementById('tb-markdown-input').value;
-        const mdPreview = document.getElementById('tb-markdown-preview');
-        if (mdPreview) {
-            mdPreview.innerHTML = window.marked ? marked.parse(text) : text;
-        }
-        
-        clearTimeout(tbDebounceTimer);
-        tbDebounceTimer = setTimeout(() => {
-            set(ref(db, 'maloracity_data/tbDoc'), text);
-        }, 250);
-    }
-
-    function switchTbTab(tabId) {
-        const tabs = document.querySelectorAll('.tb-tab');
-        const editPane = document.getElementById('tb-edit-pane');
-        const previewPane = document.getElementById('tb-preview-pane');
-        
-        if (tabId === 'edit') {
-            tabs[0].classList.add('active');
-            tabs[1].classList.remove('active');
-            editPane.classList.add('active-pane');
-            previewPane.classList.remove('active-pane');
-            document.getElementById('tb-markdown-input').focus();
-        } else {
-            tabs[0].classList.remove('active');
-            tabs[1].classList.add('active');
-            editPane.classList.remove('active-pane');
-            previewPane.classList.add('active-pane');
-            
-            const text = document.getElementById('tb-markdown-input').value;
-            const mdPreview = document.getElementById('tb-markdown-preview');
-            if (mdPreview) {
-                mdPreview.innerHTML = window.marked ? marked.parse(text) : text;
-            }
-        }
-    }
-
-    window.handleTbMarkdownInput = handleTbMarkdownInput;
-    window.switchTbTab = switchTbTab;
-</script>
 </body>
 </html>

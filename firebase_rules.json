@@ -1,0 +1,45 @@
+{
+  "rules": {
+    "maloracity_data": {
+      // 1. Only approved users are allowed to read/write the team stats and logs
+      ".read": "auth != null && root.child('maloracity_data/users').child(auth.uid).child('status').val() === 'approved'",
+      ".write": "auth != null && root.child('maloracity_data/users').child(auth.uid).child('status').val() === 'approved'",
+      
+      // 2. Only the Root Administrator is allowed to modify system settings (weights and thresholds)
+      "settings": {
+        ".write": "auth != null && root.child('maloracity_data/users').child(auth.uid).child('role').val() === 'root'"
+      },
+      
+      // 3. User node definitions
+      "users": {
+        // Only Root Administrators can view the listing of all users
+        ".read": "auth != null && root.child('maloracity_data/users').child(auth.uid).child('role').val() === 'root'",
+        
+        "$uid": {
+          // Users are allowed to read their own user profiles (to check role & status)
+          ".read": "auth != null && auth.uid === $uid",
+          
+          // User profile update rules:
+          ".write": "auth != null && (
+            // A: The Root Administrator is allowed to update any profile (e.g. approve or delete)
+            root.child('maloracity_data/users').child(auth.uid).child('role').val() === 'root' ||
+            (
+              // B: A user is allowed to write their own profile during initial signup
+              auth.uid === $uid && (
+                // B.1: If there are NO users in the database, the user becomes root and approved automatically
+                (!root.child('maloracity_data/users').exists() && 
+                 newData.child('role').val() === 'root' && 
+                 newData.child('status').val() === 'approved') ||
+                // B.2: If users already exist, the user must register as a pending editor
+                (root.child('maloracity_data/users').exists() && 
+                 !data.exists() && 
+                 newData.child('role').val() === 'editor' && 
+                 newData.child('status').val() === 'pending')
+              )
+            )
+          )"
+        }
+      }
+    }
+  }
+}

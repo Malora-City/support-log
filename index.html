@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="styles.css">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Marked.js for Markdown Support -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 
@@ -72,7 +74,20 @@
         
         <div class="card" style="border: 1px solid var(--primary);">
             <h2><i data-lucide="file-text" style="color: var(--primary); width: 20px; height: 20px; vertical-align: middle; margin-right: 6px;"></i> LIVE-DOKUMENTE (TB-VORBEREITUNG)</h2>
-            <iframe src="https://pad.riseup.net/p/maloracity_tb_doc_live" style="width: 100%; height: 500px; border: 1px solid var(--card-border); border-radius: var(--radius-md); background: #fff; margin-top: 10px;"></iframe>
+            <div class="tb-editor-container">
+                <div class="tb-editor-tabs">
+                    <button class="tb-tab active" onclick="switchTbTab('edit')">✏️ Bearbeiten</button>
+                    <button class="tb-tab" onclick="switchTbTab('preview')">👁️ Vorschau</button>
+                </div>
+                
+                <div id="tb-edit-pane" class="tb-pane active-pane">
+                    <textarea id="tb-markdown-input" placeholder="Schreibe hier die Agenda für die Teambesprechung in Markdown (z.B. # Thema, **fett**, - Punkt...)" oninput="handleTbMarkdownInput()"></textarea>
+                </div>
+                
+                <div id="tb-preview-pane" class="tb-pane">
+                    <div id="tb-markdown-preview" class="markdown-body"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -403,6 +418,21 @@
             renderLogs();
             calculateAiUpranks();
         });
+
+        // Sync for collaborative Markdown Editor
+        const tbRef = ref(db, 'maloracity_data/tbDoc');
+        onValue(tbRef, (snapshot) => {
+            const val = snapshot.val();
+            const mdInput = document.getElementById('tb-markdown-input');
+            const mdPreview = document.getElementById('tb-markdown-preview');
+            
+            if (mdInput && document.activeElement !== mdInput) {
+                mdInput.value = val || "";
+            }
+            if (mdPreview) {
+                mdPreview.innerHTML = window.marked ? marked.parse(val || "") : (val || "");
+            }
+        });
     }
 
     function pushToFirebase() {
@@ -721,6 +751,48 @@
     window.removeLog = removeLog;
     window.filterLogs = filterLogs;
     window.renderLogs = renderLogs;
+
+    let tbDebounceTimer;
+    function handleTbMarkdownInput() {
+        const text = document.getElementById('tb-markdown-input').value;
+        const mdPreview = document.getElementById('tb-markdown-preview');
+        if (mdPreview) {
+            mdPreview.innerHTML = window.marked ? marked.parse(text) : text;
+        }
+        
+        clearTimeout(tbDebounceTimer);
+        tbDebounceTimer = setTimeout(() => {
+            set(ref(db, 'maloracity_data/tbDoc'), text);
+        }, 250);
+    }
+
+    function switchTbTab(tabId) {
+        const tabs = document.querySelectorAll('.tb-tab');
+        const editPane = document.getElementById('tb-edit-pane');
+        const previewPane = document.getElementById('tb-preview-pane');
+        
+        if (tabId === 'edit') {
+            tabs[0].classList.add('active');
+            tabs[1].classList.remove('active');
+            editPane.classList.add('active-pane');
+            previewPane.classList.remove('active-pane');
+            document.getElementById('tb-markdown-input').focus();
+        } else {
+            tabs[0].classList.remove('active');
+            tabs[1].classList.add('active');
+            editPane.classList.remove('active-pane');
+            previewPane.classList.add('active-pane');
+            
+            const text = document.getElementById('tb-markdown-input').value;
+            const mdPreview = document.getElementById('tb-markdown-preview');
+            if (mdPreview) {
+                mdPreview.innerHTML = window.marked ? marked.parse(text) : text;
+            }
+        }
+    }
+
+    window.handleTbMarkdownInput = handleTbMarkdownInput;
+    window.switchTbTab = switchTbTab;
 </script>
 </body>
 </html>

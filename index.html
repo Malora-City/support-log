@@ -304,7 +304,7 @@
     </div>
 </div>
 
-<!-- FIREBASE SDK MODUL INTEGRATION -->
+<!-- FIREBASE SDK INTEGRATION -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { 
@@ -321,7 +321,7 @@
         onValue 
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    // FIREBASE KONFIGURATION
+    // FIREBASE CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyAD4y-9XFJeQV1PX1WRARszXXM2LjClG3c",
         authDomain: "maloracity.firebaseapp.com",
@@ -332,7 +332,6 @@
         appId: "1:1023780794036:web:08df9ae7ade87df53cb1e1"
     };
 
-    // FIREBASE INITIALISIEREN
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
@@ -370,8 +369,38 @@
     let stats = {};
     let textLogs = [];
 
-    // --- FIREBASE AUTHENTIFICATION ---
+    // --- HELFER: FIREBASE KEY ENCODING / DECODING ---
+    function encodeFirebaseData(obj) {
+        if (typeof obj !== 'object' || obj === null) return obj;
+        if (Array.isArray(obj)) return obj.map(encodeFirebaseData);
+        const res = {};
+        for (let key in obj) {
+            let safeKey = key.replace(/\./g, '___dot___')
+                             .replace(/\#/g, '___hash___')
+                             .replace(/\$/g, '___dollar___')
+                             .replace(/\[/g, '___lbracket___')
+                             .replace(/\]/g, '___rbracket___');
+            res[safeKey] = encodeFirebaseData(obj[key]);
+        }
+        return res;
+    }
 
+    function decodeFirebaseData(obj) {
+        if (typeof obj !== 'object' || obj === null) return obj;
+        if (Array.isArray(obj)) return obj.map(decodeFirebaseData);
+        const res = {};
+        for (let key in obj) {
+            let realKey = key.replace(/___dot___/g, '.')
+                              .replace(/___hash___/g, '#')
+                              .replace(/___dollar___/g, '$')
+                              .replace(/___lbracket___/g, '[')
+                              .replace(/___rbracket___/g, ']');
+            res[realKey] = decodeFirebaseData(obj[key]);
+        }
+        return res;
+    }
+
+    // --- AUTHENTIFICATION ---
     async function handleLogin() {
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value;
@@ -428,7 +457,6 @@
         }
     }
 
-    // AUTOMATISCHER LOGIN-STATUS BEOBACHTER
     onAuthStateChanged(auth, (user) => {
         if (user) {
             document.getElementById('user-display-email').innerText = user.email;
@@ -436,7 +464,6 @@
             document.getElementById('main-interface').style.display = 'block';
             document.body.style.display = 'block';
             
-            // Starte Realtime DB Listener sobald eingeloggt
             connectFirebaseRealtime();
         } else {
             document.getElementById('main-interface').style.display = 'none';
@@ -445,26 +472,21 @@
         }
     });
 
-    // --- FIREBASE REALTIME DATABASE SYNC ---
-
+    // --- REALTIME DATABASE SYNC ---
     function connectFirebaseRealtime() {
         const dbRef = ref(db, 'maloracity_data');
         
-        // Empfange alle Änderungen der Teamübersicht und Stats live aus Firebase
         onValue(dbRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
+            const rawData = snapshot.val();
+            if (rawData) {
+                const data = decodeFirebaseData(rawData);
                 teamData = data.teamData || defaultTeamData;
                 stats = data.stats || {};
                 textLogs = data.textLogs || [];
             } else {
-                // Wenn DB noch leer ist, Standard-Daten schreiben
                 teamData = defaultTeamData;
-                stats = {};
-                textLogs = [];
                 initStats();
                 pushToFirebase();
-                return;
             }
             initStats();
             renderTeam();
@@ -473,17 +495,15 @@
         });
     }
 
-    // Schreibt den kompletten aktuellen Status direkt in Firebase
     function pushToFirebase() {
-        set(ref(db, 'maloracity_data'), {
+        set(ref(db, 'maloracity_data'), encodeFirebaseData({
             teamData: teamData,
             stats: stats,
             textLogs: textLogs
-        });
+        }));
     }
 
-    // --- APPLIKATIONS LOGIK ---
-
+    // --- LOGIK ---
     function switchPage(pageId) {
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active-tab'));
         document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active-page'));
@@ -551,13 +571,14 @@
     function openModal(name) {
         currentSelectedMember = name; 
         document.getElementById('modalMemberName').innerText = name;
-        document.getElementById('count-tickets').value = (stats[name] && stats[name].tickets) ? stats[name].tickets : 0; 
-        document.getElementById('count-supports').value = (stats[name] && stats[name].supports) ? stats[name].supports : 0;
-        document.getElementById('count-feedbacks').value = (stats[name] && stats[name].feedbacks) ? stats[name].feedbacks : 0; 
-        document.getElementById('count-einreisen').value = (stats[name] && stats[name].einreisen) ? stats[name].einreisen : 0;
-        document.getElementById('count-ausreisen').value = (stats[name] && stats[name].ausreisen) ? stats[name].ausreisen : 0; 
-        document.getElementById('count-banne').value = (stats[name] && stats[name].banne) ? stats[name].banne : 0;
-        document.getElementById('edit-role').value = (stats[name] && stats[name].role) ? stats[name].role : "Supporter"; 
+        if(!stats[name]) initStats();
+        document.getElementById('count-tickets').value = stats[name].tickets || 0; 
+        document.getElementById('count-supports').value = stats[name].supports || 0;
+        document.getElementById('count-feedbacks').value = stats[name].feedbacks || 0; 
+        document.getElementById('count-einreisen').value = stats[name].einreisen || 0;
+        document.getElementById('count-ausreisen').value = stats[name].ausreisen || 0; 
+        document.getElementById('count-banne').value = stats[name].banne || 0;
+        document.getElementById('edit-role').value = stats[name].role || "Supporter"; 
         document.getElementById('modal-text-log').value = ""; 
         document.getElementById('memberModal').style.display = 'flex';
     }
@@ -568,14 +589,12 @@
 
     function adjustStat(statType, val) {
         if (!currentSelectedMember) return;
-        if (!stats[currentSelectedMember]) {
-            stats[currentSelectedMember] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: 'Supporter' };
-        }
         if (!stats[currentSelectedMember][statType]) stats[currentSelectedMember][statType] = 0;
         stats[currentSelectedMember][statType] = Math.max(0, stats[currentSelectedMember][statType] + val);
         document.getElementById(`count-${statType}`).value = stats[currentSelectedMember][statType];
         
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} ${val > 0 ? '+' + val : val}`, statType);
+        renderTeam(); calculateAiUpranks();
         pushToFirebase();
     }
 
@@ -584,29 +603,24 @@
         let inputVal = parseInt(document.getElementById(`count-${statType}`).value);
         if (isNaN(inputVal) || inputVal < 0) inputVal = 0;
         
-        if (!stats[currentSelectedMember]) {
-            stats[currentSelectedMember] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: 'Supporter' };
-        }
         stats[currentSelectedMember][statType] = inputVal;
         addLogItem(`${currentSelectedMember}: ${statType.toUpperCase()} gesetzt auf ${inputVal}`, statType);
+        renderTeam(); calculateAiUpranks();
         pushToFirebase();
     }
 
     function changeMemberRole() {
         let newRole = document.getElementById('edit-role').value; 
-        let oldRole = stats[currentSelectedMember] ? stats[currentSelectedMember].role : "Supporter";
+        let oldRole = stats[currentSelectedMember].role;
         if(oldRole === newRole) return;
         
-        if (teamData[oldRole]) {
-            teamData[oldRole] = teamData[oldRole].filter(n => n !== currentSelectedMember);
-        }
+        teamData[oldRole] = teamData[oldRole].filter(n => n !== currentSelectedMember);
         if (!teamData[newRole]) teamData[newRole] = []; 
         teamData[newRole].push(currentSelectedMember);
-        if (stats[currentSelectedMember]) {
-            stats[currentSelectedMember].role = newRole;
-        }
+        stats[currentSelectedMember].role = newRole;
         
         addLogItem(`🔼 BEFÖRDERUNG: ${currentSelectedMember} von ${oldRole} zu ${newRole}`, 'uprank');
+        renderTeam(); calculateAiUpranks();
         pushToFirebase();
     }
 
@@ -615,53 +629,42 @@
         if(!txt.trim()) return;
         addLogItem(`📝 NOTIZ für ${currentSelectedMember}: ${txt}`, 'einreisen');
         document.getElementById('modal-text-log').value = ""; 
+        calculateAiUpranks();
         pushToFirebase();
     }
 
     function deleteMember() {
         if(!confirm(`Möchtest du ${currentSelectedMember} wirklich löschen?`)) return;
-        let role = stats[currentSelectedMember] ? stats[currentSelectedMember].role : ""; 
-        if (role && teamData[role]) {
-            teamData[role] = teamData[role].filter(n => n !== currentSelectedMember);
-        } else {
-            for (let r in teamData) {
-                teamData[r] = teamData[r].filter(n => n !== currentSelectedMember);
-            }
-        }
+        let role = stats[currentSelectedMember].role; 
+        teamData[role] = teamData[role].filter(n => n !== currentSelectedMember);
         delete stats[currentSelectedMember]; 
         addLogItem(`❌ TEAM-KICK: ${currentSelectedMember} wurde entfernt.`, 'kick');
-        closeModal(); 
+        closeModal(); renderTeam(); calculateAiUpranks();
         pushToFirebase();
     }
 
-    // Direktes Schreiben des neuen Mitglieds in Firebase
     function addMember() {
         let name = document.getElementById('add-name').value.trim(); 
         let role = document.getElementById('add-role').value;
         if(!name) return alert("Bitte Namen eingeben!");
-
         if(!teamData[role]) teamData[role] = []; 
-        if(!teamData[role].includes(name)) {
-            teamData[role].push(name);
-        }
-        
+        teamData[role].push(name);
         stats[name] = { tickets: 0, supports: 0, feedbacks: 0, einreisen: 0, ausreisen: 0, banne: 0, role: role };
         addLogItem(`📥 NEUES MITGLIED: ${name} als ${role} beigetreten.`, 'uprank');
-        
-        closeAddModal(); 
-        document.getElementById('add-name').value = ""; 
-        
-        // Speichert das neue Mitglied direkt in der Firebase Realtime DB
+        closeAddModal(); document.getElementById('add-name').value = ""; 
+        renderTeam(); calculateAiUpranks();
         pushToFirebase();
     }
 
     function addLogItem(message, category) {
         let now = new Date().toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
         textLogs.unshift({time: now, msg: message, id: Date.now(), cat: category});
+        renderLogs();
     }
 
     function removeLog(id) {
         textLogs = textLogs.filter(l => l.id !== id);
+        renderLogs();
         pushToFirebase();
     }
 
@@ -710,7 +713,7 @@
         }
     }
 
-    // EXPORT ZUR BEDIENUNG IM DOM (ONCLICK-EVENTS)
+    // GLOBALE WINDOW EXPORTE
     window.handleLogin = handleLogin;
     window.handleRegister = handleRegister;
     window.handleLogout = handleLogout;

@@ -632,19 +632,72 @@
         let aiDiv = document.getElementById('ai-suggestions'); 
         if(!aiDiv) return;
         let suggestions = [];
+
+        const weights = {
+            tickets: 10,
+            supports: 15,
+            feedbacks: 25,
+            einreisen: 12,
+            ausreisen: 8,
+            banne: 5
+        };
+
+        const roleThresholds = {
+            "Einreisebeamter": 150,
+            "Test Supporter": 200,
+            "Supporter": 500,
+            "Sr. Supporter": 800,
+            "Test - Moderator": 300,
+            "Moderator": 600,
+            "Sr. Moderator": 1000,
+            "Test-Administrator": 450,
+            "Administrator": 900,
+            "Sr. Administrator": 1400,
+            "Probe Analyst": 250,
+            "Analyst": 600
+        };
+
         for (let name in stats) {
             let user = stats[name]; 
-            let totalEinreisen = user.einreisen || 0;
-            if ((user.tickets || 0) + (user.supports || 0) >= 5 || (user.feedbacks || 0) >= 3 || totalEinreisen >= 10) {
-                suggestions.push({ name: name, reason: `Starke Werte (🎫 ${user.tickets || 0} | 🛠️ ${user.supports || 0} | ⭐ ${user.feedbacks || 0} | 🛃 ${totalEinreisen}).` });
+            const role = user.role || "Supporter";
+
+            // Keine Uprank-Tipps für die oberste Führungsebene
+            if (role === "Projektleitung" || role === "Stv. Projektleitung" || role === "Teamleitung" || role === "Stv. Teamleitung") {
+                continue;
+            }
+
+            const threshold = roleThresholds[role] || 500;
+            const score = (user.tickets || 0) * weights.tickets +
+                          (user.supports || 0) * weights.supports +
+                          (user.feedbacks || 0) * weights.feedbacks +
+                          (user.einreisen || 0) * weights.einreisen +
+                          (user.ausreisen || 0) * weights.ausreisen +
+                          (user.banne || 0) * weights.banne;
+
+            if (score >= threshold) {
+                suggestions.push({ 
+                    name: name, 
+                    role: role, 
+                    score: score, 
+                    threshold: threshold,
+                    details: `🎫 ${user.tickets || 0} T | 🛠️ ${user.supports || 0} S | ⭐ ${user.feedbacks || 0} F | 🛃 ${user.einreisen || 0} E`
+                });
             }
         }
+
         if(suggestions.length === 0) { 
-            aiDiv.innerHTML = `<div style="font-size:0.8rem; color:#a0aec0; text-align:center; padding:10px;">Vergib Punkte für KI-Tipps.</div>`; 
+            aiDiv.innerHTML = `<div style="font-size:0.85rem; color:var(--text-muted); text-align:center; padding:15px; font-style: italic;">Derzeit keine Teammitglieder für eine Beförderung qualifiziert.</div>`; 
         } else {
             let html = ""; 
             suggestions.forEach(s => { 
-                html += `<div class="ai-item"><div class="ai-header">🚀 Uprank Tipp: ${s.name}</div><div class="ai-reason">${s.reason}</div></div>`; 
+                html += `
+                    <div class="ai-item">
+                        <div class="ai-header">🚀 Uprank Tipp: ${s.name}</div>
+                        <div style="font-size:0.8rem; font-weight: 600; color: #fff; margin-bottom: 2px;">Aktuelle Rolle: ${s.role}</div>
+                        <div style="font-size:0.8rem; font-weight: 600; color: #10b981; margin-bottom: 6px;">Punkte: ${s.score} / ${s.threshold} (Bereit!)</div>
+                        <div class="ai-reason">${s.details}</div>
+                    </div>
+                `; 
             });
             aiDiv.innerHTML = html;
         }
